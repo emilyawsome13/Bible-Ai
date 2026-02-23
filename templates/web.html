@@ -4912,7 +4912,7 @@
             await loadBiblePicks(true);
             loadVerseOfDay();
             renderRecHistory();
-            updateXpDisplay();
+            await updateXpDisplay();
             updateOnlineUsers();
             updateTabThemeClass(currentTab);
             switchCommentsView('verse');
@@ -7369,11 +7369,31 @@ function loadAchievements(stats) {
             return { level };
         }
 
-        function updateXpDisplay() {
+        async function syncXpWithServer() {
+            try {
+                const res = await fetch('/api/shop/xp');
+                const data = await res.json();
+                if (data.xp !== undefined) {
+                    // Update localStorage to match server
+                    const state = getXpState();
+                    state.xp = data.xp;
+                    saveXpState(state);
+                    return data;
+                }
+            } catch (e) {
+                console.error('Error syncing XP:', e);
+            }
+            return null;
+        }
+        
+        async function updateXpDisplay() {
+            // First try to sync with server
+            const serverData = await syncXpWithServer();
+            
             const state = getXpState();
             const xpEl = document.getElementById('profileXp');
             const levelEl = document.getElementById('profileLevel');
-            const { level } = getLevelFromXp(state.xp);
+            const level = serverData ? serverData.level : getLevelFromXp(state.xp).level;
             if (xpEl) xpEl.textContent = `${state.xp} XP`;
             if (levelEl) levelEl.textContent = `Level ${level}`;
         }
