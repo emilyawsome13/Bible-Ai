@@ -3694,15 +3694,22 @@
         
         /* Achievements */
         .achievements-container { padding: 20px; max-width: 1200px; margin: 0 auto; }
-        .achievements-stats { background: var(--surface); padding: 12px 20px; border-radius: 50px; border: 1px solid var(--border); font-weight: 700; color: var(--primary); }
-        .achievements-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
-        .achievement-item { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; display: flex; align-items: flex-start; gap: 16px; transition: all 0.2s; }
-        .achievement-item:hover { transform: translateY(-2px); border-color: var(--primary); }
+        .achievements-stats { background: var(--surface); padding: 12px 20px; border-radius: 50px; border: 1px solid var(--border); font-weight: 700; color: var(--primary); display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+        .achievement-xp-total { color: var(--success); }
+        .achievement-categories { display: flex; gap: 8px; margin: 20px 0; flex-wrap: wrap; overflow-x: auto; padding-bottom: 8px; }
+        .achievements-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+        @media (max-width: 768px) {
+            .achievements-grid { grid-template-columns: 1fr; gap: 16px; }
+            .achievement-categories { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        }
+        .achievement-item { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; display: flex; align-items: flex-start; gap: 16px; transition: all 0.2s; cursor: pointer; position: relative; }
+        .achievement-item:hover { transform: translateY(-2px); border-color: var(--primary); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
         .achievement-item.completed { background: linear-gradient(135deg, rgba(48,209,88,0.1), var(--surface)); border-color: var(--success); }
+        .achievement-item.completed:hover { border-color: var(--success); box-shadow: 0 8px 24px rgba(48,209,88,0.2); }
         .achievement-icon { font-size: 40px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; background: var(--glass); border-radius: 12px; flex-shrink: 0; }
         .achievement-item.completed .achievement-icon { background: rgba(48,209,88,0.2); }
-        .achievement-content { flex: 1; }
-        .achievement-name { font-weight: 700; font-size: 16px; margin-bottom: 4px; }
+        .achievement-content { flex: 1; min-width: 0; }
+        .achievement-name { font-weight: 700; font-size: 16px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
         .achievement-desc { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
         .achievement-reward { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--primary); font-weight: 600; }
         .achievement-progress { margin-top: 8px; }
@@ -3710,10 +3717,60 @@
         .achievement-progress-fill { height: 100%; background: var(--primary); border-radius: 3px; transition: width 0.3s; }
         .achievement-progress-text { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
         .achievement-item.completed .achievement-progress-fill { background: var(--success); }
-        .achievement-rarity-easy { border-left: 4px solid #30D158; }
-        .achievement-rarity-medium { border-left: 4px solid #FF9F0A; }
-        .achievement-rarity-hard { border-left: 4px solid #FF375F; }
-        .achievement-rarity-extreme { border-left: 4px solid #BF5AF2; }
+        .achievement-category-tag { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: var(--glass); color: var(--text-secondary); font-weight: 500; }
+        /* Mobile click-to-expand progress */
+        .achievement-detail-panel { 
+            position: absolute; 
+            bottom: 100%; 
+            left: 50%; 
+            transform: translateX(-50%) scale(0.95); 
+            background: var(--surface); 
+            border: 1px solid var(--border); 
+            border-radius: 12px; 
+            padding: 16px; 
+            min-width: 280px; 
+            max-width: 320px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3); 
+            z-index: 1000; 
+            opacity: 0; 
+            pointer-events: none; 
+            transition: all 0.2s ease; 
+            margin-bottom: 8px;
+        }
+        .achievement-detail-panel.visible { opacity: 1; pointer-events: auto; transform: translateX(-50%) scale(1); }
+        .achievement-detail-panel::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 8px solid transparent;
+            border-top-color: var(--surface);
+        }
+        @media (max-width: 768px) {
+            .achievement-detail-panel { 
+                position: fixed; 
+                top: 50%; 
+                left: 50%; 
+                bottom: auto;
+                transform: translate(-50%, -50%) scale(0.95); 
+                margin: 0;
+                width: 90%;
+                max-width: 350px;
+            }
+            .achievement-detail-panel.visible { transform: translate(-50%, -50%) scale(1); }
+            .achievement-detail-panel::after { display: none; }
+            .achievement-detail-overlay {
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.5);
+                z-index: 999;
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.2s;
+            }
+            .achievement-detail-overlay.visible { opacity: 1; pointer-events: auto; }
+        }
         
         /* XP Guide */
         .xp-guide-container { padding: 20px; max-width: 1200px; margin: 0 auto; }
@@ -4409,7 +4466,18 @@
                         <h2 class="shop-title">🏆 Achievements</h2>
                         <div class="achievements-stats">
                             <span id="achievementsCompleted">0/0 Completed</span>
+                            <span id="achievementsXP" class="achievement-xp-total">0 XP Earned</span>
                         </div>
+                    </div>
+                    <div class="achievement-categories">
+                        <button class="shop-category-btn active" onclick="filterAchievements('all')">📋 All</button>
+                        <button class="shop-category-btn" onclick="filterAchievements('likes')">❤️ Likes</button>
+                        <button class="shop-category-btn" onclick="filterAchievements('saves')">🔖 Saves</button>
+                        <button class="shop-category-btn" onclick="filterAchievements('comments')">💬 Comments</button>
+                        <button class="shop-category-btn" onclick="filterAchievements('replies')">🤝 Replies</button>
+                        <button class="shop-category-btn" onclick="filterAchievements('streak')">🔥 Streaks</button>
+                        <button class="shop-category-btn" onclick="filterAchievements('shares')">📢 Shares</button>
+                        <button class="shop-category-btn" onclick="filterAchievements('special')">⭐ Special</button>
                     </div>
                     <div id="achievementsList" class="achievements-grid"></div>
                 </div>
@@ -4513,15 +4581,7 @@
                     </div>
                 </div>
 
-                <!-- 2. ACHIEVEMENT BADGES -->
-                <div class="glass-card" style="margin: 20px 0; padding: 24px;">
-                    <div style="font-size: 18px; font-weight: 700; margin-bottom: 16px;">🏆 Achievements</div>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 12px;" id="achievementGrid">
-                        <!-- Generated by JS -->
-                    </div>
-                </div>
-
-                <!-- 3. FAVORITE BOOKS CHART -->
+                <!-- 2. FAVORITE BOOKS CHART -->
                 <div class="glass-card" style="margin: 20px 0; padding: 24px;">
                     <div style="font-size: 18px; font-weight: 700; margin-bottom: 16px;">📚 Favorite Books</div>
                     <div id="favoriteBooksChart" style="display: flex; flex-direction: column; gap: 10px;">
@@ -5741,8 +5801,12 @@
                         // Track daily challenge - view
                         trackDailyAction('view', nextVerseKey);
                         
+                        // Award XP and track stat for viewing
+                        awardXP(5, 'view');
+                        trackStat('total_verses');
+                        
                         if (settings.notifications) {
-                            showToast('New verse discovered!');
+                            showToast('New verse discovered! +5 XP');
                         }
                         if (currentTab === 'comments') loadComments();
                     }
@@ -6349,6 +6413,28 @@
             
             // Apply shop effects to comments
             setTimeout(() => applyShopEffectsToComments(), 100);
+            
+            // Setup DM button handlers
+            setupDmButtonHandlers();
+        }
+
+        function setupDmButtonHandlers() {
+            // Remove existing handlers to prevent duplicates
+            document.querySelectorAll('.dm-btn').forEach(btn => {
+                btn.removeEventListener('click', handleDmButtonClick);
+                btn.addEventListener('click', handleDmButtonClick);
+            });
+        }
+        
+        function handleDmButtonClick(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const btn = e.currentTarget;
+            const userId = parseInt(btn.dataset.userId);
+            const userName = btn.dataset.userName || 'User';
+            const userPicture = btn.dataset.userPicture || '';
+            const userDecor = btn.dataset.userDecor || '';
+            openDmFromComment(userId, userName, userPicture, userDecor);
         }
 
         async function postComment() {
@@ -6425,6 +6511,9 @@
             
             // Apply shop effects to community messages
             setTimeout(() => applyShopEffectsToComments(), 100);
+            
+            // Setup DM button handlers
+            setupDmButtonHandlers();
         }
 
         async function postCommunityMessage() {
@@ -6874,7 +6963,7 @@
                         <button class="reaction-btn" onclick="addReaction(${c.id}, '${type}', 'pray', this)">🙏 ${reactions['pray'] || 0}</button>
                         <button class="reaction-btn" onclick="addReaction(${c.id}, '${type}', 'cross', this)">✝️ ${reactions['cross'] || 0}</button>
                         <button class="reply-btn" ${replyDisabled} onclick="showReplyBox(${c.id}, '${type}')">Reply (${c.reply_count || replies.length || 0})</button>
-                        ${canDm ? `<button class="reply-btn" onclick="openDmFromComment(${c.user_id}, ${JSON.stringify(c.user_name || 'User')}, ${JSON.stringify(c.user_picture || '')}, ${JSON.stringify(c.avatar_decoration || '')})">DM</button>` : ''}
+                        ${canDm ? `<button class="reply-btn dm-btn" data-user-id="${c.user_id}" data-user-name="${escapeHtml(c.user_name || 'User')}" data-user-picture="${escapeHtml(c.user_picture || '')}" data-user-decor="${escapeHtml(c.avatar_decoration || '')}">DM</button>` : ''}
                     </div>
                     <div class="comment-replies" id="replies-${type}-${c.id}">${renderReplies(replies)}</div>
                     <div class="reply-input-area" id="reply-box-${type}-${c.id}" style="display: ${replyOpen ? 'flex' : 'none'};">
@@ -7124,11 +7213,12 @@
                 const data = await res.json();
                 currentUserCustomization = data;
                 
-                // Apply frame
+                // Apply frame - check both equipped_frame (from API) and frame
                 const frameEl = document.getElementById('profileFrame');
-                if (frameEl && data.frame) {
-                    const effects = data.frame.effects || {};
-                    const itemId = data.frame.item_id || '';
+                const equippedFrame = data.equipped_frame || data.frame;
+                if (frameEl && equippedFrame) {
+                    const effects = equippedFrame.effects || {};
+                    const itemId = equippedFrame.item_id || '';
                     frameEl.className = 'profile-frame';
                     
                     // Apply frame based on item_id for more specific styling
@@ -7142,13 +7232,21 @@
                     else if (itemId.includes('ice') || effects.frame_color === '#00CED1') frameEl.classList.add('ice');
                     else if (itemId.includes('nature') || effects.frame_style === 'nature') frameEl.classList.add('nature');
                     else if (itemId.includes('stars') || effects.frame_style === 'stars') frameEl.classList.add('stars');
+                    else if (itemId.includes('wood')) frameEl.classList.add('wood');
+                    else if (itemId.includes('stone')) frameEl.classList.add('stone');
+                    else if (itemId.includes('divine')) frameEl.classList.add('divine');
+                    else if (itemId.includes('cosmic')) frameEl.classList.add('cosmic');
+                    else if (itemId.includes('infinity')) frameEl.classList.add('infinity');
+                } else if (frameEl) {
+                    frameEl.className = 'profile-frame';
                 }
                 
-                // Apply name color
+                // Apply name color - check both equipped_name_color and name_color
                 const nameEl = document.getElementById('profileUserName');
-                if (nameEl && data.name_color) {
-                    const effects = data.name_color.effects || {};
-                    const itemId = data.name_color.item_id || '';
+                const equippedNameColor = data.equipped_name_color || data.name_color;
+                if (nameEl && equippedNameColor) {
+                    const effects = equippedNameColor.effects || {};
+                    const itemId = equippedNameColor.item_id || '';
                     nameEl.className = 'user-name';
                     
                     if (effects.gradient || itemId.includes('rainbow')) nameEl.classList.add('rainbow');
@@ -7162,20 +7260,22 @@
                     else if (effects.color) nameEl.style.color = effects.color;
                 }
                 
-                // Apply title
+                // Apply title - check both equipped_title and title
                 const titleEl = document.getElementById('profileTitle');
-                if (titleEl && data.title) {
-                    const effects = data.title.effects || {};
-                    const rarity = data.title.rarity || 'common';
-                    titleEl.innerHTML = `<span class="user-title ${rarity}">${effects.title || ''}</span>`;
+                const equippedTitle = data.equipped_title || data.title;
+                if (titleEl && equippedTitle) {
+                    const effects = equippedTitle.effects || {};
+                    const rarity = equippedTitle.rarity || 'common';
+                    titleEl.innerHTML = `<span class="user-title ${rarity}">${effects.title || equippedTitle.name || ''}</span>`;
                 } else if (titleEl) {
                     titleEl.textContent = '';
                 }
                 
-                // Apply badges
+                // Apply badges - check both equipped_badges and badges
                 const badgesEl = document.getElementById('profileBadges');
-                if (badgesEl && data.badges && data.badges.length > 0) {
-                    badgesEl.innerHTML = data.badges.map(b => {
+                const equippedBadges = data.equipped_badges || data.badges;
+                if (badgesEl && equippedBadges && equippedBadges.length > 0) {
+                    badgesEl.innerHTML = equippedBadges.map(b => {
                         const effects = b.effects || {};
                         return `<span class="profile-badge" style="background: ${effects.color || 'var(--primary)'}" title="${b.name}">${b.icon}</span>`;
                     }).join('');
@@ -7183,13 +7283,14 @@
                     badgesEl.innerHTML = '';
                 }
                 
-                // Apply profile background
+                // Apply profile background - check both equipped_profile_bg and profile_bg
                 const profileCard = document.getElementById('profileCard');
+                const equippedProfileBg = data.equipped_profile_bg || data.profile_bg;
                 if (profileCard) {
                     profileCard.classList.remove('profile-bg-golden', 'profile-bg-night', 'profile-bg-clouds', 'profile-bg-nature', 'profile-bg-ocean', 'profile-bg-fire');
-                    if (data.profile_bg) {
-                        const effects = data.profile_bg.effects || {};
-                        const itemId = data.profile_bg.item_id || '';
+                    if (equippedProfileBg) {
+                        const effects = equippedProfileBg.effects || {};
+                        const itemId = equippedProfileBg.item_id || '';
                         
                         if (itemId.includes('golden') || (effects.bg_style === 'gradient' && effects.colors && effects.colors[0] === '#FFD700')) {
                             profileCard.classList.add('profile-bg-golden');
@@ -7245,25 +7346,38 @@
                 else if (itemId.includes('pink') || effects.color === '#FF69B4') nameEl.classList.add('pink');
             }
             
-            // Apply title
+            // Apply title - only if not already present
+            // Skip if titles are already rendered server-side
             if (customization.title && nameEl) {
-                const effects = customization.title.effects || {};
-                const rarity = customization.title.rarity || 'common';
-                const titleSpan = document.createElement('span');
-                titleSpan.className = `user-title ${rarity}`;
-                titleSpan.textContent = effects.title || '';
-                nameEl.parentNode.insertBefore(titleSpan, nameEl);
+                // Check if ANY title already exists (server-rendered or dynamic)
+                const existingAnyTitle = element.querySelector('.user-title');
+                const existingDynamicTitle = element.querySelector('.user-title[data-shop-effect="true"]');
+                if (!existingAnyTitle && !existingDynamicTitle) {
+                    const effects = customization.title.effects || {};
+                    const rarity = customization.title.rarity || 'common';
+                    const titleSpan = document.createElement('span');
+                    titleSpan.className = `user-title ${rarity}`;
+                    titleSpan.setAttribute('data-shop-effect', 'true');
+                    titleSpan.textContent = effects.title || '';
+                    nameEl.parentNode.insertBefore(titleSpan, nameEl);
+                }
             }
             
-            // Apply badges
+            // Apply badges - only if not already present
             if (customization.badges && customization.badges.length > 0 && nameEl) {
-                const badgesSpan = document.createElement('span');
-                badgesSpan.className = 'user-badges';
-                badgesSpan.innerHTML = customization.badges.map(b => {
-                    const effects = b.effects || {};
-                    return `<span class="user-badge-small" style="background: ${effects.color || 'var(--primary)'}" title="${b.name}">${b.icon}</span>`;
-                }).join('');
-                nameEl.parentNode.insertBefore(badgesSpan, nameEl.nextSibling);
+                // Check if ANY badges container already exists
+                const existingAnyBadges = element.querySelector('.user-badges, .user-badge-icon');
+                const existingDynamicBadges = element.querySelector('.user-badges[data-shop-effect="true"]');
+                if (!existingAnyBadges && !existingDynamicBadges) {
+                    const badgesSpan = document.createElement('span');
+                    badgesSpan.className = 'user-badges';
+                    badgesSpan.setAttribute('data-shop-effect', 'true');
+                    badgesSpan.innerHTML = customization.badges.map(b => {
+                        const effects = b.effects || {};
+                        return `<span class="user-badge-small" style="background: ${effects.color || 'var(--primary)'}" title="${b.name}">${b.icon}</span>`;
+                    }).join('');
+                    nameEl.parentNode.insertBefore(badgesSpan, nameEl.nextSibling);
+                }
             }
             
             // Apply avatar frame
@@ -7567,53 +7681,88 @@ function getStreakCount() {
 
 const ACHIEVEMENTS = [
     // Like Achievements
-    { id: 'first_like', icon: '❤️', name: 'First Love', desc: 'Like your first verse', goal: 1, progress: (d) => d.liked, check: (d) => d.liked >= 1 },
-    { id: 'liker_50', icon: '💖', name: 'Appreciator', desc: 'Like 50 verses', goal: 50, progress: (d) => d.liked, check: (d) => d.liked >= 50 },
-    { id: 'liker_200', icon: '💞', name: 'Enthusiast', desc: 'Like 200 verses', goal: 200, progress: (d) => d.liked, check: (d) => d.liked >= 200 },
-    { id: 'liker_500', icon: '💘', name: 'Devoted', desc: 'Like 500 verses', goal: 500, progress: (d) => d.liked, check: (d) => d.liked >= 500 },
-    { id: 'liker_1000', icon: '💎', name: 'Beloved', desc: 'Like 1000 verses', goal: 1000, progress: (d) => d.liked, check: (d) => d.liked >= 1000 },
+    { id: 'first_like', icon: '❤️', name: 'First Love', desc: 'Like your first verse', goal: 1, category: 'likes', xp: 25, progress: (d) => d.liked, check: (d) => d.liked >= 1 },
+    { id: 'liker_10', icon: '💗', name: 'Beginning', desc: 'Like 10 verses', goal: 10, category: 'likes', xp: 50, progress: (d) => d.liked, check: (d) => d.liked >= 10 },
+    { id: 'liker_50', icon: '💖', name: 'Appreciator', desc: 'Like 50 verses', goal: 50, category: 'likes', xp: 100, progress: (d) => d.liked, check: (d) => d.liked >= 50 },
+    { id: 'liker_100', icon: '💝', name: 'Admirer', desc: 'Like 100 verses', goal: 100, category: 'likes', xp: 150, progress: (d) => d.liked, check: (d) => d.liked >= 100 },
+    { id: 'liker_200', icon: '💞', name: 'Enthusiast', desc: 'Like 200 verses', goal: 200, category: 'likes', xp: 250, progress: (d) => d.liked, check: (d) => d.liked >= 200 },
+    { id: 'liker_500', icon: '💘', name: 'Devoted', desc: 'Like 500 verses', goal: 500, category: 'likes', xp: 500, progress: (d) => d.liked, check: (d) => d.liked >= 500 },
+    { id: 'liker_1000', icon: '💎', name: 'Beloved', desc: 'Like 1000 verses', goal: 1000, category: 'likes', xp: 1000, progress: (d) => d.liked, check: (d) => d.liked >= 1000 },
+    { id: 'liker_2500', icon: '👑', name: 'Heart of Gold', desc: 'Like 2500 verses', goal: 2500, category: 'likes', xp: 2500, progress: (d) => d.liked, check: (d) => d.liked >= 2500 },
 
     // Save Achievements
-    { id: 'collector', icon: '🔖', name: 'Collector', desc: 'Save 10 verses', goal: 10, progress: (d) => d.saved, check: (d) => d.saved >= 10 },
-    { id: 'librarian', icon: '📚', name: 'Librarian', desc: 'Save 50 verses', goal: 50, progress: (d) => d.saved, check: (d) => d.saved >= 50 },
-    { id: 'archivist', icon: '🗄️', name: 'Archivist', desc: 'Save 150 verses', goal: 150, progress: (d) => d.saved, check: (d) => d.saved >= 150 },
-    { id: 'curator', icon: '🏛️', name: 'Curator', desc: 'Save 300 verses', goal: 300, progress: (d) => d.saved, check: (d) => d.saved >= 300 },
-    { id: 'vault_keeper', icon: '🔐', name: 'Vault Keeper', desc: 'Save 500 verses', goal: 500, progress: (d) => d.saved, check: (d) => d.saved >= 500 },
+    { id: 'first_save', icon: '🔖', name: 'Bookmark', desc: 'Save your first verse', goal: 1, category: 'saves', xp: 25, progress: (d) => d.saved, check: (d) => d.saved >= 1 },
+    { id: 'collector', icon: '📑', name: 'Collector', desc: 'Save 10 verses', goal: 10, category: 'saves', xp: 50, progress: (d) => d.saved, check: (d) => d.saved >= 10 },
+    { id: 'librarian', icon: '📚', name: 'Librarian', desc: 'Save 50 verses', goal: 50, category: 'saves', xp: 100, progress: (d) => d.saved, check: (d) => d.saved >= 50 },
+    { id: 'archivist', icon: '🗄️', name: 'Archivist', desc: 'Save 150 verses', goal: 150, category: 'saves', xp: 200, progress: (d) => d.saved, check: (d) => d.saved >= 150 },
+    { id: 'curator', icon: '🏛️', name: 'Curator', desc: 'Save 300 verses', goal: 300, category: 'saves', xp: 350, progress: (d) => d.saved, check: (d) => d.saved >= 300 },
+    { id: 'vault_keeper', icon: '🔐', name: 'Vault Keeper', desc: 'Save 500 verses', goal: 500, category: 'saves', xp: 500, progress: (d) => d.saved, check: (d) => d.saved >= 500 },
+    { id: 'hoarder_1000', icon: '📦', name: 'Divine Hoarder', desc: 'Save 1000 verses', goal: 1000, category: 'saves', xp: 1000, progress: (d) => d.saved, check: (d) => d.saved >= 1000 },
 
     // Comment Achievements
-    { id: 'first_comment', icon: '💬', name: 'Voice', desc: 'Post a comment', goal: 1, progress: (d) => d.comments, check: (d) => d.comments >= 1 },
-    { id: 'conversationalist', icon: '🗣️', name: 'Chatty', desc: 'Post 25 comments', goal: 25, progress: (d) => d.comments, check: (d) => d.comments >= 25 },
-    { id: 'storyteller', icon: '📜', name: 'Storyteller', desc: 'Post 75 comments', goal: 75, progress: (d) => d.comments, check: (d) => d.comments >= 75 },
-    { id: 'oracle', icon: '🔮', name: 'Oracle', desc: 'Post 150 comments', goal: 150, progress: (d) => d.comments, check: (d) => d.comments >= 150 },
-    { id: 'scribe', icon: '✍️', name: 'Scribe', desc: 'Post 300 comments', goal: 300, progress: (d) => d.comments, check: (d) => d.comments >= 300 },
+    { id: 'first_comment', icon: '💬', name: 'Voice', desc: 'Post a comment', goal: 1, category: 'comments', xp: 50, progress: (d) => d.comments, check: (d) => d.comments >= 1 },
+    { id: 'commenter_5', icon: '🗨️', name: 'Engaged', desc: 'Post 5 comments', goal: 5, category: 'comments', xp: 75, progress: (d) => d.comments, check: (d) => d.comments >= 5 },
+    { id: 'conversationalist', icon: '🗣️', name: 'Chatty', desc: 'Post 25 comments', goal: 25, category: 'comments', xp: 150, progress: (d) => d.comments, check: (d) => d.comments >= 25 },
+    { id: 'storyteller', icon: '📜', name: 'Storyteller', desc: 'Post 75 comments', goal: 75, category: 'comments', xp: 300, progress: (d) => d.comments, check: (d) => d.comments >= 75 },
+    { id: 'oracle', icon: '🔮', name: 'Oracle', desc: 'Post 150 comments', goal: 150, category: 'comments', xp: 500, progress: (d) => d.comments, check: (d) => d.comments >= 150 },
+    { id: 'scribe', icon: '✍️', name: 'Scribe', desc: 'Post 300 comments', goal: 300, category: 'comments', xp: 800, progress: (d) => d.comments, check: (d) => d.comments >= 300 },
+    { id: 'philosopher_500', icon: '🦉', name: 'Philosopher', desc: 'Post 500 comments', goal: 500, category: 'comments', xp: 1200, progress: (d) => d.comments, check: (d) => d.comments >= 500 },
 
     // Reply Achievements
-    { id: 'first_reply', icon: '💡', name: 'Responder', desc: 'Post your first reply', goal: 1, progress: (d) => d.replies, check: (d) => d.replies >= 1 },
-    { id: 'helper', icon: '🤝', name: 'Helper', desc: 'Post 10 replies', goal: 10, progress: (d) => d.replies, check: (d) => d.replies >= 10 },
-    { id: 'encourager', icon: '🌟', name: 'Encourager', desc: 'Post 50 replies', goal: 50, progress: (d) => d.replies, check: (d) => d.replies >= 50 },
-    { id: 'counselor', icon: '🕊️', name: 'Counselor', desc: 'Post 150 replies', goal: 150, progress: (d) => d.replies, check: (d) => d.replies >= 150 },
+    { id: 'first_reply', icon: '💡', name: 'Responder', desc: 'Post your first reply', goal: 1, category: 'replies', xp: 30, progress: (d) => d.replies, check: (d) => d.replies >= 1 },
+    { id: 'helper', icon: '🤝', name: 'Helper', desc: 'Post 10 replies', goal: 10, category: 'replies', xp: 75, progress: (d) => d.replies, check: (d) => d.replies >= 10 },
+    { id: 'encourager', icon: '🌟', name: 'Encourager', desc: 'Post 50 replies', goal: 50, category: 'replies', xp: 200, progress: (d) => d.replies, check: (d) => d.replies >= 50 },
+    { id: 'counselor', icon: '🕊️', name: 'Counselor', desc: 'Post 150 replies', goal: 150, category: 'replies', xp: 400, progress: (d) => d.replies, check: (d) => d.replies >= 150 },
+    { id: 'mentor_300', icon: '🎓', name: 'Mentor', desc: 'Post 300 replies', goal: 300, category: 'replies', xp: 700, progress: (d) => d.replies, check: (d) => d.replies >= 300 },
 
     // View/Explorer Achievements
-    { id: 'explorer', icon: '🧭', name: 'Explorer', desc: 'View 100 verses', goal: 100, progress: (d) => d.total_verses, check: (d) => d.total_verses >= 100 },
-    { id: 'scholar', icon: '🎓', name: 'Scholar', desc: 'View 500 verses', goal: 500, progress: (d) => d.total_verses, check: (d) => d.total_verses >= 500 },
-    { id: 'sage', icon: '🧠', name: 'Sage', desc: 'View 1000 verses', goal: 1000, progress: (d) => d.total_verses, check: (d) => d.total_verses >= 1000 },
-    { id: 'master', icon: '👑', name: 'Master', desc: 'View 2500 verses', goal: 2500, progress: (d) => d.total_verses, check: (d) => d.total_verses >= 2500 },
-    { id: 'pilgrim', icon: '🥾', name: 'Pilgrim', desc: 'View 5000 verses', goal: 5000, progress: (d) => d.total_verses, check: (d) => d.total_verses >= 5000 },
+    { id: 'first_view', icon: '👁️', name: 'First Glance', desc: 'View 1 verse', goal: 1, category: 'special', xp: 10, progress: (d) => d.total_verses, check: (d) => d.total_verses >= 1 },
+    { id: 'explorer', icon: '🧭', name: 'Explorer', desc: 'View 100 verses', goal: 100, category: 'special', xp: 100, progress: (d) => d.total_verses, check: (d) => d.total_verses >= 100 },
+    { id: 'scholar', icon: '📖', name: 'Scholar', desc: 'View 500 verses', goal: 500, category: 'special', xp: 250, progress: (d) => d.total_verses, check: (d) => d.total_verses >= 500 },
+    { id: 'sage', icon: '🧠', name: 'Sage', desc: 'View 1000 verses', goal: 1000, category: 'special', xp: 500, progress: (d) => d.total_verses, check: (d) => d.total_verses >= 1000 },
+    { id: 'master', icon: '👑', name: 'Master', desc: 'View 2500 verses', goal: 2500, category: 'special', xp: 1000, progress: (d) => d.total_verses, check: (d) => d.total_verses >= 2500 },
+    { id: 'pilgrim', icon: '🥾', name: 'Pilgrim', desc: 'View 5000 verses', goal: 5000, category: 'special', xp: 2000, progress: (d) => d.total_verses, check: (d) => d.total_verses >= 5000 },
+    { id: 'seeker_10000', icon: '🔍', name: 'Divine Seeker', desc: 'View 10000 verses', goal: 10000, category: 'special', xp: 5000, progress: (d) => d.total_verses, check: (d) => d.total_verses >= 10000 },
 
     // Streak Achievements
-    { id: 'three_day_streak', icon: '🔥', name: 'On Fire', desc: '3 day streak', goal: 3, progress: () => getStreakCount(), check: () => getStreakCount() >= 3 },
-    { id: 'week_warrior', icon: '🛡️', name: 'Warrior', desc: '7 day streak', goal: 7, progress: () => getStreakCount(), check: () => getStreakCount() >= 7 },
-    { id: 'fortnight', icon: '⚔️', name: 'Unstoppable', desc: '14 day streak', goal: 14, progress: () => getStreakCount(), check: () => getStreakCount() >= 14 },
-    { id: 'month_master', icon: '🏆', name: 'Month Master', desc: '30 day streak', goal: 30, progress: () => getStreakCount(), check: () => getStreakCount() >= 30 },
+    { id: 'first_day', icon: '☀️', name: 'First Day', desc: 'Start your streak', goal: 1, category: 'streak', xp: 25, progress: () => getStreakCount(), check: () => getStreakCount() >= 1 },
+    { id: 'three_day_streak', icon: '🔥', name: 'On Fire', desc: '3 day streak', goal: 3, category: 'streak', xp: 100, progress: () => getStreakCount(), check: () => getStreakCount() >= 3 },
+    { id: 'week_warrior', icon: '🛡️', name: 'Week Warrior', desc: '7 day streak', goal: 7, category: 'streak', xp: 250, progress: () => getStreakCount(), check: () => getStreakCount() >= 7 },
+    { id: 'fortnight', icon: '⚔️', name: 'Unstoppable', desc: '14 day streak', goal: 14, category: 'streak', xp: 500, progress: () => getStreakCount(), check: () => getStreakCount() >= 14 },
+    { id: 'month_master', icon: '🏆', name: 'Month Master', desc: '30 day streak', goal: 30, category: 'streak', xp: 1000, progress: () => getStreakCount(), check: () => getStreakCount() >= 30 },
+    { id: 'centurion_100', icon: '💯', name: 'Centurion', desc: '100 day streak', goal: 100, category: 'streak', xp: 3000, progress: () => getStreakCount(), check: () => getStreakCount() >= 100 },
+    { id: 'yearly_365', icon: '📅', name: 'Faithful', desc: '365 day streak', goal: 365, category: 'streak', xp: 10000, progress: () => getStreakCount(), check: () => getStreakCount() >= 365 },
 
     // Share Achievements
-    { id: 'share_the_word', icon: '📢', name: 'Evangelist', desc: 'Share 5 verses', goal: 5, progress: () => getSharedVerseCount(), check: () => getSharedVerseCount() >= 5 },
-    { id: 'spreader', icon: '🌍', name: 'Spreader', desc: 'Share 20 verses', goal: 20, progress: () => getSharedVerseCount(), check: () => getSharedVerseCount() >= 20 },
-    { id: 'missionary', icon: '✨', name: 'Missionary', desc: 'Share 50 verses', goal: 50, progress: () => getSharedVerseCount(), check: () => getSharedVerseCount() >= 50 },
+    { id: 'first_share', icon: '📤', name: 'Spread the Word', desc: 'Share your first verse', goal: 1, category: 'shares', xp: 50, progress: () => getSharedVerseCount(), check: () => getSharedVerseCount() >= 1 },
+    { id: 'sharer_3', icon: '📨', name: 'Messenger', desc: 'Share 3 verses', goal: 3, category: 'shares', xp: 75, progress: () => getSharedVerseCount(), check: () => getSharedVerseCount() >= 3 },
+    { id: 'share_the_word', icon: '📢', name: 'Evangelist', desc: 'Share 5 verses', goal: 5, category: 'shares', xp: 150, progress: () => getSharedVerseCount(), check: () => getSharedVerseCount() >= 5 },
+    { id: 'spreader', icon: '🌍', name: 'Spreader', desc: 'Share 20 verses', goal: 20, category: 'shares', xp: 350, progress: () => getSharedVerseCount(), check: () => getSharedVerseCount() >= 20 },
+    { id: 'missionary', icon: '✨', name: 'Missionary', desc: 'Share 50 verses', goal: 50, category: 'shares', xp: 700, progress: () => getSharedVerseCount(), check: () => getSharedVerseCount() >= 50 },
+    { id: 'apostle_100', icon: '📖', name: 'Apostle', desc: 'Share 100 verses', goal: 100, category: 'shares', xp: 1500, progress: () => getSharedVerseCount(), check: () => getSharedVerseCount() >= 100 },
+
+    // Shop/Purchase Achievements
+    { id: 'first_purchase', icon: '🛒', name: 'First Purchase', desc: 'Buy your first shop item', goal: 1, category: 'special', xp: 100, progress: (d) => d.purchases, check: (d) => d.purchases >= 1 },
+    { id: 'shopper_5', icon: '🏪', name: 'Shopper', desc: 'Buy 5 items', goal: 5, category: 'special', xp: 200, progress: (d) => d.purchases, check: (d) => d.purchases >= 5 },
+    { id: 'collector_items', icon: '💎', name: 'Item Collector', desc: 'Buy 15 items', goal: 15, category: 'special', xp: 500, progress: (d) => d.purchases, check: (d) => d.purchases >= 15 },
+    { id: 'shopaholic', icon: '🛍️', name: 'Shopaholic', desc: 'Buy 30 items', goal: 30, category: 'special', xp: 1000, progress: (d) => d.purchases, check: (d) => d.purchases >= 30 },
 
     // Time-based Achievements
-    { id: 'night_owl', icon: '🌙', name: 'Night Owl', desc: 'Visit after midnight', goal: 1, progress: () => (new Date().getHours() < 5 ? 1 : 0), check: () => new Date().getHours() < 5 },
-    { id: 'early_bird', icon: '🌅', name: 'Early Bird', desc: 'Visit before 6am', goal: 1, progress: () => (new Date().getHours() < 6 && new Date().getHours() >= 4 ? 1 : 0), check: () => new Date().getHours() < 6 && new Date().getHours() >= 4 }
+    { id: 'night_owl', icon: '🌙', name: 'Night Owl', desc: 'Visit after midnight', goal: 1, category: 'special', xp: 50, progress: () => (new Date().getHours() < 5 ? 1 : 0), check: () => new Date().getHours() < 5 },
+    { id: 'early_bird', icon: '🌅', name: 'Early Bird', desc: 'Visit before 6am', goal: 1, category: 'special', xp: 50, progress: () => (new Date().getHours() < 6 && new Date().getHours() >= 4 ? 1 : 0), check: () => new Date().getHours() < 6 && new Date().getHours() >= 4 },
+    { id: 'noon_prayer', icon: '☀️', name: 'Midday Prayer', desc: 'Visit at noon', goal: 1, category: 'special', xp: 25, progress: () => (new Date().getHours() === 12 ? 1 : 0), check: () => new Date().getHours() === 12 },
+    { id: 'evening_reflection', icon: '🌆', name: 'Evening Reflection', desc: 'Visit at 6pm', goal: 1, category: 'special', xp: 25, progress: () => (new Date().getHours() === 18 ? 1 : 0), check: () => new Date().getHours() === 18 },
+    
+    // Social Achievements
+    { id: 'liked_comment', icon: '❤️', name: 'Appreciated', desc: 'Get a like on your comment', goal: 1, category: 'special', xp: 50, progress: (d) => d.liked_comments, check: (d) => d.liked_comments >= 1 },
+    { id: 'popular_5', icon: '🔥', name: 'Rising Star', desc: 'Get 5 likes on comments', goal: 5, category: 'special', xp: 100, progress: (d) => d.liked_comments, check: (d) => d.liked_comments >= 5 },
+    { id: 'influencer_25', icon: '🌟', name: 'Influencer', desc: 'Get 25 likes on comments', goal: 25, category: 'special', xp: 250, progress: (d) => d.liked_comments, check: (d) => d.liked_comments >= 25 },
+    
+    // Special Milestones
+    { id: 'level_5', icon: '⬆️', name: 'Rising', desc: 'Reach level 5', goal: 5, category: 'special', xp: 200, progress: () => userXP.level, check: () => userXP.level >= 5 },
+    { id: 'level_10', icon: '📈', name: 'Climbing', desc: 'Reach level 10', goal: 10, category: 'special', xp: 500, progress: () => userXP.level, check: () => userXP.level >= 10 },
+    { id: 'level_25', icon: '🚀', name: 'Veteran', desc: 'Reach level 25', goal: 25, category: 'special', xp: 1500, progress: () => userXP.level, check: () => userXP.level >= 25 },
+    { id: 'level_50', icon: '🏔️', name: 'Legend', desc: 'Reach level 50', goal: 50, category: 'special', xp: 5000, progress: () => userXP.level, check: () => userXP.level >= 50 }
 ];
 
 function getAchievementProgress(ach, stats, isUnlocked) {
@@ -7630,65 +7779,203 @@ function getAchievementProgress(ach, stats, isUnlocked) {
     return { pct, label };
 }
 
-function loadAchievements(stats) {
-            const unlocked = JSON.parse(localStorage.getItem('unlockedAchievements') || '[]');
-            const grid = document.getElementById('achievementGrid');
-            grid.innerHTML = '';
-            
-            // Check for new unlocks
-            ACHIEVEMENTS.forEach(ach => {
-                if (!unlocked.includes(ach.id) && ach.check(stats)) {
-                    unlocked.push(ach.id);
-                    const awarded = awardXp(ACHIEVEMENT_XP, 'achievement', ach.id);
-                    if (settings.notifications) {
-                        showToast(`🏆 Unlocked: ${ach.name}! +${ACHIEVEMENT_XP} XP`);
-                    }
-                    if (awarded) AudioSys.playSuccess();
-                }
-            });
-            localStorage.setItem('unlockedAchievements', JSON.stringify(unlocked));
-            
-            // Create tooltip element
-            let tooltip = document.getElementById('achievementTooltip');
-            if (!tooltip) {
-                tooltip = document.createElement('div');
-                tooltip.id = 'achievementTooltip';
-                tooltip.className = 'achievement-tooltip';
-                document.body.appendChild(tooltip);
+let currentAchievementFilter = 'all';
+let currentAchievementStats = {};
+
+async function loadAchievements(stats) {
+    // If stats not provided, fetch them
+    if (!stats) {
+        stats = await fetchUserStats();
+    }
+    currentAchievementStats = stats;
+    const unlocked = JSON.parse(localStorage.getItem('unlockedAchievements') || '[]');
+    let totalXPEarned = 0;
+    let newUnlocks = false;
+    
+    // Check for new unlocks and calculate XP
+    ACHIEVEMENTS.forEach(ach => {
+        if (unlocked.includes(ach.id)) {
+            totalXPEarned += ach.xp || 50;
+        } else if (ach.check(stats)) {
+            unlocked.push(ach.id);
+            totalXPEarned += ach.xp || 50;
+            newUnlocks = true;
+            const awarded = awardXp(ach.xp || 50, 'achievement', ach.id);
+            if (settings.notifications) {
+                showToast(`🏆 Unlocked: ${ach.name}! +${ach.xp || 50} XP`);
             }
-            
-            ACHIEVEMENTS.forEach(ach => {
-                const isUnlocked = unlocked.includes(ach.id);
-                const badge = document.createElement('div');
-                badge.className = `achievement-badge ${isUnlocked ? 'unlocked' : 'locked'}`;
-                badge.innerHTML = `
-                    <div class="achievement-icon">${ach.icon}</div>
-                    <div class="achievement-name">${ach.name}</div>
-                `;
-                
-                // Tooltip events
-                badge.addEventListener('mouseenter', (e) => {
-                    const progress = getAchievementProgress(ach, stats, isUnlocked);
-                    tooltip.innerHTML = `
-                        <div>${ach.name}: ${ach.desc}${isUnlocked ? ' ?' : ' (Locked)'}</div>
-                        <div class="achievement-progress">
+            if (awarded && typeof AudioSys !== 'undefined') AudioSys.playSuccess();
+        }
+    });
+    localStorage.setItem('unlockedAchievements', JSON.stringify(unlocked));
+    
+    // Update achievements list
+    renderAchievementsList();
+    
+    // Update achievements stats header
+    const completedEl = document.getElementById('achievementsCompleted');
+    const xpEl = document.getElementById('achievementsXP');
+    if (completedEl) completedEl.textContent = `${unlocked.length}/${ACHIEVEMENTS.length} Completed`;
+    if (xpEl) xpEl.textContent = `+${totalXPEarned} XP Earned`;
+    
+    return newUnlocks;
+}
+
+async function fetchUserStats() {
+    try {
+        const res = await fetch('/api/profile_stats');
+        if (!res.ok) return userStats;
+        return await res.json();
+    } catch (e) {
+        return userStats;
+    }
+}
+
+function renderAchievementsList() {
+    const container = document.getElementById('achievementsList');
+    if (!container) return;
+    
+    const unlocked = JSON.parse(localStorage.getItem('unlockedAchievements') || '[]');
+    const stats = currentAchievementStats;
+    
+    // Filter achievements
+    let achievementsToShow = ACHIEVEMENTS;
+    if (currentAchievementFilter !== 'all') {
+        achievementsToShow = ACHIEVEMENTS.filter(ach => ach.category === currentAchievementFilter);
+    }
+    
+    container.innerHTML = achievementsToShow.map(ach => {
+        const isUnlocked = unlocked.includes(ach.id);
+        const progress = getAchievementProgress(ach, stats, isUnlocked);
+        const categoryLabels = {
+            likes: 'Likes', saves: 'Saves', comments: 'Comments', 
+            replies: 'Replies', streak: 'Streaks', shares: 'Shares', special: 'Special'
+        };
+        
+        return `
+            <div class="achievement-item ${isUnlocked ? 'completed' : ''}" 
+                 onclick="showAchievementDetail('${ach.id}', ${isUnlocked})"
+                 data-ach-id="${ach.id}">
+                <div class="achievement-icon">${ach.icon}</div>
+                <div class="achievement-content">
+                    <div class="achievement-name">
+                        ${ach.name}
+                        <span class="achievement-category-tag">${categoryLabels[ach.category] || ach.category}</span>
+                        ${isUnlocked ? '✓' : ''}
+                    </div>
+                    <div class="achievement-desc">${ach.desc}</div>
+                    <div class="achievement-reward">⚡ +${ach.xp || 50} XP</div>
+                    <div class="achievement-progress">
+                        <div class="achievement-progress-bar">
                             <div class="achievement-progress-fill" style="width: ${progress.pct}%"></div>
                         </div>
-                        <div class="achievement-progress-label">${progress.label}</div>
-                    `;
-                    const rect = badge.getBoundingClientRect();
-                    tooltip.style.left = (rect.left + rect.width/2) + 'px';
-                    tooltip.style.top = (rect.top - 36) + 'px';
-                    tooltip.style.transform = 'translateX(-50%)';
-                    tooltip.classList.add('visible');
-                });
-                badge.addEventListener('mouseleave', () => {
-                    tooltip.classList.remove('visible');
-                });
-                
-                grid.appendChild(badge);
-            });
+                        <div class="achievement-progress-text">${progress.label}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function filterAchievements(category) {
+    currentAchievementFilter = category;
+    
+    // Update active button
+    document.querySelectorAll('.achievement-categories .shop-category-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.textContent.toLowerCase().includes(category) || 
+            (category === 'all' && btn.textContent.includes('All'))) {
+            btn.classList.add('active');
         }
+    });
+    
+    renderAchievementsList();
+}
+
+function showAchievementDetail(achId, isUnlocked) {
+    const ach = ACHIEVEMENTS.find(a => a.id === achId);
+    if (!ach) return;
+    
+    const stats = currentAchievementStats;
+    const progress = getAchievementProgress(ach, stats, isUnlocked);
+    
+    // Remove existing detail panels
+    document.querySelectorAll('.achievement-detail-panel, .achievement-detail-overlay').forEach(el => el.remove());
+    
+    // Create overlay for mobile
+    const overlay = document.createElement('div');
+    overlay.className = 'achievement-detail-overlay';
+    overlay.onclick = () => {
+        overlay.classList.remove('visible');
+        panel.classList.remove('visible');
+        setTimeout(() => {
+            overlay.remove();
+            panel.remove();
+        }, 200);
+    };
+    document.body.appendChild(overlay);
+    
+    // Create detail panel
+    const panel = document.createElement('div');
+    panel.className = 'achievement-detail-panel';
+    panel.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+            <div style="font-size: 48px;">${ach.icon}</div>
+            <div>
+                <div style="font-weight: 700; font-size: 18px;">${ach.name}</div>
+                <div style="font-size: 13px; color: var(--text-secondary);">${ach.desc}</div>
+            </div>
+        </div>
+        <div style="background: var(--glass); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span>Status:</span>
+                <span style="color: ${isUnlocked ? 'var(--success)' : 'var(--text-secondary)'}; font-weight: 600;">
+                    ${isUnlocked ? '✓ Completed' : 'Locked'}
+                </span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span>Reward:</span>
+                <span style="color: var(--primary); font-weight: 600;">⚡ ${ach.xp || 50} XP</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span>Progress:</span>
+                <span>${progress.label}</span>
+            </div>
+        </div>
+        <div class="achievement-progress-bar" style="margin-bottom: 8px;">
+            <div class="achievement-progress-fill" style="width: ${progress.pct}%; background: ${isUnlocked ? 'var(--success)' : 'var(--primary)'};"></div>
+        </div>
+        <div style="text-align: center; font-size: 12px; color: var(--text-secondary);">
+            ${isUnlocked ? 'Great job! Keep going!' : 'Keep working to unlock this achievement!'}
+        </div>
+    `;
+    document.body.appendChild(panel);
+    
+    // Show with animation
+    requestAnimationFrame(() => {
+        overlay.classList.add('visible');
+        panel.classList.add('visible');
+    });
+    
+    // Auto-hide after 4 seconds on desktop
+    const isMobile = window.innerWidth <= 768;
+    if (!isMobile) {
+        setTimeout(() => {
+            overlay.classList.remove('visible');
+            panel.classList.remove('visible');
+            setTimeout(() => {
+                overlay.remove();
+                panel.remove();
+            }, 200);
+        }, 4000);
+    }
+}
+
+// Check achievement when stats update
+async function checkAchievement(type, value) {
+    userStats[type] = value;
+    await loadAchievements(userStats);
+}
 
         // 3. FAVORITE BOOKS CHART
         async function loadFavoriteBooks() {
@@ -7791,7 +8078,9 @@ function loadAchievements(stats) {
             shared.push(Date.now());
             localStorage.setItem('sharedVerses', shared.join(','));
             trackDailyAction('share');
+            awardXP(35, 'share');
             trackStat('shares');
+            showToast('📤 Verse shared! +35 XP');
         }
 
         // === DISCOVER TAB FEATURES ===
@@ -8713,7 +9002,9 @@ function loadAchievements(stats) {
                 if (parentType === 'community') loadCommunityMessages(true);
                 else loadComments(true);
                 loadProfileStats();
-                showToast('Reply posted!');
+                awardXP(20, 'reply');
+                trackStat('replies');
+                showToast('Reply posted! +20 XP');
             } catch (e) {
                 showToast('Reply failed');
             }
@@ -9808,49 +10099,123 @@ function loadAchievements(stats) {
             }).join('');
         }
         
-        // XP Guide Content
+        // XP Guide - Functional XP Actions
+        const XP_ACTIONS = {
+            like: { min: 25, max: 50, cooldown: 1000, dailyMax: 100 },
+            save: { min: 25, max: 50, cooldown: 1000, dailyMax: 100 },
+            comment: { min: 100, max: 100, cooldown: 5000, dailyMax: 50 },
+            reply: { min: 15, max: 25, cooldown: 3000, dailyMax: 100 },
+            share: { min: 25, max: 50, cooldown: 60000, dailyMax: 20 },
+            view: { min: 5, max: 10, cooldown: 500, dailyMax: 200 },
+            streak: { min: 10, max: 60, cooldown: 86400000, dailyMax: 1 },
+            trivia_correct: { min: 20, max: 50, cooldown: 0, dailyMax: 50 },
+            prayer: { min: 75, max: 75, cooldown: 60000, dailyMax: 10 },
+            memorize: { min: 100, max: 100, cooldown: 0, dailyMax: 10 },
+            study_note: { min: 50, max: 200, cooldown: 0, dailyMax: 20 },
+            achievement: { min: 25, max: 2000, cooldown: 0, dailyMax: 1000 }
+        };
+        
+        let xpActionCooldowns = {};
+        let xpDailyCounts = JSON.parse(localStorage.getItem('xpDailyCounts') || '{}');
+        
+        // Reset daily counts at midnight
+        const lastReset = localStorage.getItem('xpDailyReset');
+        const today = new Date().toDateString();
+        if (lastReset !== today) {
+            xpDailyCounts = {};
+            localStorage.setItem('xpDailyCounts', JSON.stringify(xpDailyCounts));
+            localStorage.setItem('xpDailyReset', today);
+        }
+        
+        async function earnXP(actionType, multiplier = 1, customAmount = null) {
+            const action = XP_ACTIONS[actionType];
+            if (!action) {
+                console.error('Unknown XP action:', actionType);
+                return null;
+            }
+            
+            // Check cooldown
+            const now = Date.now();
+            if (xpActionCooldowns[actionType] && now < xpActionCooldowns[actionType]) {
+                const remaining = Math.ceil((xpActionCooldowns[actionType] - now) / 1000);
+                console.log(`XP action ${actionType} on cooldown: ${remaining}s remaining`);
+                return null;
+            }
+            
+            // Check daily limit
+            const today = new Date().toDateString();
+            const dailyKey = `${actionType}_${today}`;
+            const currentCount = xpDailyCounts[dailyKey] || 0;
+            if (currentCount >= action.dailyMax) {
+                console.log(`XP action ${actionType} daily limit reached`);
+                return null;
+            }
+            
+            // Calculate XP amount
+            let amount;
+            if (customAmount !== null) {
+                amount = customAmount;
+            } else {
+                amount = Math.floor(Math.random() * (action.max - action.min + 1)) + action.min;
+            }
+            amount = Math.floor(amount * multiplier);
+            
+            // Apply cooldown and track daily count
+            xpActionCooldowns[actionType] = now + action.cooldown;
+            xpDailyCounts[dailyKey] = currentCount + 1;
+            localStorage.setItem('xpDailyCounts', JSON.stringify(xpDailyCounts));
+            
+            // Award XP
+            const result = await awardXP(amount, actionType);
+            if (result) {
+                trackStat(actionType);
+                return result;
+            }
+            return null;
+        }
+        
         function renderXPGuide() {
             const container = document.getElementById('xpGuideContent');
             if (!container) return;
+            
+            const today = new Date().toDateString();
             
             const guideData = {
                 daily: {
                     title: '📅 Daily Actions',
                     items: [
-                        { icon: '👍', action: 'Like a verse', xp: '25-50', bonus: 'Streak bonus +50' },
-                        { icon: '💾', action: 'Save a verse', xp: '25-50', bonus: '' },
-                        { icon: '💬', action: 'Post a comment', xp: '100', bonus: '' },
-                        { icon: '📖', action: 'Read verse (streak)', xp: '10-60', bonus: '+2 per streak day' },
-                        { icon: '📅', action: 'Daily challenge', xp: '50-500', bonus: 'Based on difficulty' }
+                        { icon: '👍', action: 'Like a verse', type: 'like', xp: '25-50', bonus: 'Streak bonus +50' },
+                        { icon: '💾', action: 'Save a verse', type: 'save', xp: '25-50', bonus: '' },
+                        { icon: '💬', action: 'Post a comment', type: 'comment', xp: '100', bonus: '' },
+                        { icon: '📖', action: 'Read verse (streak)', type: 'view', xp: '5-10', bonus: 'Per verse viewed' },
+                        { icon: '🎯', action: 'Complete daily challenge', type: 'daily_challenge', xp: '50-500', bonus: 'Auto-awarded' }
                     ]
                 },
                 social: {
-                    title: '👥 Social',
+                    title: '👥 Social Interactions',
                     items: [
-                        { icon: '❤️', action: 'Get a like on comment', xp: '10', bonus: '' },
-                        { icon: '✝️', action: 'Add prayer to journal', xp: '75', bonus: '' },
-                        { icon: '📤', action: 'Share verse', xp: '25', bonus: '' },
-                        { icon: '🤝', action: 'Help someone (reply)', xp: '15', bonus: '' }
+                        { icon: '❤️', action: 'Get a like on comment', type: 'liked_comment', xp: '10', bonus: 'Auto-awarded' },
+                        { icon: '📤', action: 'Share a verse', type: 'share', xp: '25-50', bonus: '' },
+                        { icon: '🤝', action: 'Reply to someone', type: 'reply', xp: '15-25', bonus: '' },
+                        { icon: '✝️', action: 'Add prayer to journal', type: 'prayer', xp: '75', bonus: 'Limited daily' }
                     ]
                 },
                 study: {
                     title: '📚 Bible Study',
                     items: [
-                        { icon: '🧠', action: 'Memorize a verse', xp: '100', bonus: '' },
-                        { icon: '📝', action: 'Write study note', xp: '50-200', bonus: 'Based on length' },
-                        { icon: '📖', action: 'Complete chapter', xp: '25', bonus: '' },
-                        { icon: '📚', action: 'Complete 5 books', xp: '500', bonus: '' },
-                        { icon: '🔍', action: 'Study topic (per verse)', xp: '15', bonus: '+2/min' },
-                        { icon: '✅', action: 'Complete topic study', xp: '200', bonus: '' }
+                        { icon: '🧠', action: 'Memorize a verse', type: 'memorize', xp: '100', bonus: '' },
+                        { icon: '📝', action: 'Write study note', type: 'study_note', xp: '50-200', bonus: 'Based on length' },
+                        { icon: '🎮', action: 'Correct trivia answer', type: 'trivia_correct', xp: '20-50', bonus: 'Streak bonus' },
+                        { icon: '🔥', action: 'Maintain reading streak', type: 'streak', xp: '10-60', bonus: '+2 per streak day' }
                     ]
                 },
                 special: {
-                    title: '⭐ Special',
+                    title: '⭐ Achievements & Milestones',
                     items: [
-                        { icon: '🧩', action: 'Correct trivia answer', xp: '20-50', bonus: 'Streak bonus' },
-                        { icon: '🏆', action: 'Complete achievement', xp: '25-2000', bonus: 'Based on difficulty' },
-                        { icon: '⬆️', action: 'Level up', xp: 'Bonus', bonus: 'Higher level = more' },
-                        { icon: '🎁', action: 'Special events', xp: 'Varies', bonus: 'Holiday bonuses' }
+                        { icon: '🏆', action: 'Complete achievement', type: 'achievement', xp: '25-2000', bonus: 'Based on difficulty' },
+                        { icon: '⬆️', action: 'Level up bonus', type: 'level_up', xp: 'Bonus', bonus: 'Higher level = more' },
+                        { icon: '🛒', action: 'First purchase', type: 'first_purchase', xp: '100', bonus: 'One-time' },
+                        { icon: '🎁', action: 'Special events', type: 'event', xp: 'Varies', bonus: 'Holiday bonuses' }
                     ]
                 }
             };
@@ -9858,18 +10223,25 @@ function loadAchievements(stats) {
             container.innerHTML = Object.entries(guideData).map(([key, category]) => `
                 <div class="xp-guide-category xp-guide-${key}">
                     <div class="xp-guide-category-title">${category.title}</div>
-                    ${category.items.map(item => `
-                        <div class="xp-guide-item">
+                    ${category.items.map(item => {
+                        const dailyKey = item.type ? `${item.type}_${today}` : '';
+                        const usedToday = xpDailyCounts[dailyKey] || 0;
+                        const action = XP_ACTIONS[item.type];
+                        const limitText = action ? `${usedToday}/${action.dailyMax} today` : '';
+                        
+                        return `
+                        <div class="xp-guide-item" ${item.type ? `onclick="xpGuideAction('${item.type}', this)" style="cursor: pointer;"` : ''}>
                             <div class="xp-guide-action">
                                 <span class="xp-guide-icon">${item.icon}</span>
                                 <div>
                                     <div class="xp-guide-text">${item.action}</div>
                                     ${item.bonus ? `<div class="xp-guide-bonus">${item.bonus}</div>` : ''}
+                                    ${limitText ? `<div class="xp-guide-bonus" style="color: var(--primary);">${limitText}</div>` : ''}
                                 </div>
                             </div>
                             <div class="xp-guide-amount">⚡ ${item.xp} XP</div>
                         </div>
-                    `).join('')}
+                    `}).join('')}
                 </div>
             `).join('');
             
@@ -9878,6 +10250,22 @@ function loadAchievements(stats) {
             const guideLevel = document.getElementById('guideLevel');
             if (guideXp) guideXp.textContent = formatNumber(userXP.xp) + ' XP';
             if (guideLevel) guideLevel.textContent = 'Level ' + userXP.level;
+        }
+        
+        async function xpGuideAction(actionType, element) {
+            // Visual feedback
+            element.style.background = 'var(--primary-glow)';
+            setTimeout(() => {
+                element.style.background = '';
+            }, 200);
+            
+            const result = await earnXP(actionType);
+            if (result) {
+                showToast(`⚡ +XP earned for ${actionType}!`);
+                renderXPGuide(); // Refresh to update daily limits
+            } else {
+                showToast('⏳ Action on cooldown or daily limit reached');
+            }
         }
         
         async function purchaseItem(itemId, price) {
