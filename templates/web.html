@@ -3930,7 +3930,8 @@
         .user-title-mythic { background: linear-gradient(135deg, #FF1493, #9400D3, #00CED1); color: #fff; box-shadow: 0 0 20px rgba(255,20,147,0.5); animation: mythicShine 3s linear infinite; }
         
         /* Shop Item Effects - Badges */
-        .user-badge-icon { display: inline-flex; align-items: center; justify-content: center; margin-left: 4px; font-size: 14px; cursor: help; vertical-align: middle; flex-shrink: 0; }
+        .user-badge-icon { display: inline-flex; align-items: center; justify-content: center; margin-left: 4px; font-size: 14px; cursor: help; vertical-align: middle; flex-shrink: 0; min-width: 18px; min-height: 18px; }
+        .user-title:empty, .user-badge-icon:empty { display: none !important; }
         
         /* Shop Item Effects - Chat Effects */
         .chat-effect-chat_sparkle { position: relative; }
@@ -6927,8 +6928,20 @@
             // Extract equipped items from comment data
             const frameClass = c.equipped_frame ? `profile-frame profile-frame-${c.equipped_frame.item_id}` : '';
             const nameColorClass = c.equipped_name_color ? `profile-name-${c.equipped_name_color.item_id}` : '';
-            const titleHtml = c.equipped_title ? `<span class="user-title user-title-${c.equipped_title.rarity}">${c.equipped_title.icon} ${c.equipped_title.name}</span>` : '';
-            const badgesHtml = (c.equipped_badges || []).map(b => `<span class="user-badge-icon" title="${b.name}">${b.icon}</span>`).join('');
+            
+            // Build title HTML with fallback
+            let titleHtml = '';
+            if (c.equipped_title && c.equipped_title.name) {
+                const titleIcon = c.equipped_title.icon || '';
+                titleHtml = `<span class="user-title user-title-${c.equipped_title.rarity}">${titleIcon} ${c.equipped_title.name}</span>`;
+            }
+            
+            // Build badges HTML with fallback
+            const badgesHtml = (c.equipped_badges || []).filter(b => b && b.name).map(b => {
+                const badgeIcon = b.icon || '🏅';
+                return `<span class="user-badge-icon" title="${b.name}">${badgeIcon}</span>`;
+            }).join('');
+            
             const chatEffectClass = c.equipped_chat_effect ? `chat-effect-${c.equipped_chat_effect.item_id}` : '';
             
             const avatarHtml = renderAvatarMarkup(c.user_picture, c.user_name, c.avatar_decoration, 'comment-avatar ' + frameClass);
@@ -7007,8 +7020,20 @@
                 // Extract equipped items from reply data
                 const frameClass = r.equipped_frame ? `profile-frame profile-frame-${r.equipped_frame.item_id}` : '';
                 const nameColorClass = r.equipped_name_color ? `profile-name-${r.equipped_name_color.item_id}` : '';
-                const titleHtml = r.equipped_title ? `<span class="user-title user-title-${r.equipped_title.rarity}">${r.equipped_title.icon} ${r.equipped_title.name}</span>` : '';
-                const badgesHtml = (r.equipped_badges || []).map(b => `<span class="user-badge-icon" title="${b.name}">${b.icon}</span>`).join('');
+                
+                // Build title HTML with fallback
+                let titleHtml = '';
+                if (r.equipped_title && r.equipped_title.name) {
+                    const titleIcon = r.equipped_title.icon || '';
+                    titleHtml = `<span class="user-title user-title-${r.equipped_title.rarity}">${titleIcon} ${r.equipped_title.name}</span>`;
+                }
+                
+                // Build badges HTML with fallback
+                const badgesHtml = (r.equipped_badges || []).filter(b => b && b.name).map(b => {
+                    const badgeIcon = b.icon || '🏅';
+                    return `<span class="user-badge-icon" title="${b.name}">${badgeIcon}</span>`;
+                }).join('');
+                
                 const chatEffectClass = r.equipped_chat_effect ? `chat-effect-${r.equipped_chat_effect.item_id}` : '';
                 
                 const avatarHtml = renderAvatarMarkup(r.user_picture || '', r.user_name || 'User', r.avatar_decoration || '', 'comment-avatar ' + frameClass);
@@ -7353,13 +7378,16 @@
                 const existingAnyTitle = element.querySelector('[class*="user-title-"], .user-title');
                 const existingDynamicTitle = element.querySelector('.user-title[data-shop-effect="true"]');
                 if (!existingAnyTitle && !existingDynamicTitle) {
-                    const effects = customization.title.effects || {};
-                    const rarity = customization.title.rarity || 'common';
-                    const titleSpan = document.createElement('span');
-                    titleSpan.className = `user-title ${rarity}`;
-                    titleSpan.setAttribute('data-shop-effect', 'true');
-                    titleSpan.textContent = effects.title || '';
-                    nameEl.parentNode.insertBefore(titleSpan, nameEl);
+                    const titleName = customization.title.name || customization.title.effects?.title;
+                    if (titleName) {
+                        const rarity = customization.title.rarity || 'common';
+                        const titleIcon = customization.title.icon || '';
+                        const titleSpan = document.createElement('span');
+                        titleSpan.className = `user-title ${rarity}`;
+                        titleSpan.setAttribute('data-shop-effect', 'true');
+                        titleSpan.textContent = `${titleIcon} ${titleName}`.trim();
+                        nameEl.parentNode.insertBefore(titleSpan, nameEl);
+                    }
                 }
             }
             
@@ -7369,14 +7397,17 @@
                 const existingAnyBadges = element.querySelector('.user-badge-icon');
                 const existingDynamicBadges = element.querySelector('.user-badges[data-shop-effect="true"]');
                 if (!existingAnyBadges && !existingDynamicBadges) {
-                    const badgesSpan = document.createElement('span');
-                    badgesSpan.className = 'user-badges';
-                    badgesSpan.setAttribute('data-shop-effect', 'true');
-                    badgesSpan.innerHTML = customization.badges.map(b => {
-                        const effects = b.effects || {};
-                        return `<span class="user-badge-small" style="background: ${effects.color || 'var(--primary)'}" title="${b.name}">${b.icon}</span>`;
-                    }).join('');
-                    nameEl.parentNode.insertBefore(badgesSpan, nameEl.nextSibling);
+                    const validBadges = customization.badges.filter(b => b && (b.icon || b.name));
+                    if (validBadges.length > 0) {
+                        const badgesSpan = document.createElement('span');
+                        badgesSpan.className = 'user-badges';
+                        badgesSpan.setAttribute('data-shop-effect', 'true');
+                        badgesSpan.innerHTML = validBadges.map(b => {
+                            const badgeIcon = b.icon || '🏅';
+                            return `<span class="user-badge-small" style="background: ${b.effects?.color || 'var(--primary)'}" title="${b.name}">${badgeIcon}</span>`;
+                        }).join('');
+                        nameEl.parentNode.insertBefore(badgesSpan, nameEl.nextSibling);
+                    }
                 }
             }
             
