@@ -1021,9 +1021,15 @@ def get_bans():
                     reason TEXT,
                     banned_by TEXT,
                     banned_at TIMESTAMP,
-                    expires_at TIMESTAMP
+                    expires_at TIMESTAMP,
+                    ip_address TEXT
                 )
             """)
+            # Ensure ip_address column exists for legacy databases
+            try:
+                c.execute("ALTER TABLE bans ADD COLUMN IF NOT EXISTS ip_address TEXT")
+            except Exception:
+                pass
         else:
             c.execute("""
                 CREATE TABLE IF NOT EXISTS bans (
@@ -1032,13 +1038,22 @@ def get_bans():
                     reason TEXT,
                     banned_by TEXT,
                     banned_at TIMESTAMP,
-                    expires_at TIMESTAMP
+                    expires_at TIMESTAMP,
+                    ip_address TEXT
                 )
             """)
+            # Ensure ip_address column exists for legacy databases
+            try:
+                c.execute("SELECT ip_address FROM bans LIMIT 1")
+            except Exception:
+                try:
+                    c.execute("ALTER TABLE bans ADD COLUMN ip_address TEXT")
+                except Exception:
+                    pass
         
         c.execute("""
             SELECT b.id, b.user_id, b.reason, b.banned_by, b.banned_at, b.expires_at,
-                   u.name, u.email
+                   b.ip_address, u.name, u.email
             FROM bans b
             LEFT JOIN users u ON b.user_id = u.id
             ORDER BY b.banned_at DESC
@@ -1055,8 +1070,9 @@ def get_bans():
                 "banned_by": row[3] or "Unknown",
                 "banned_at": row[4],
                 "expires_at": row[5],
-                "user_name": row[6] or "Unknown",
-                "user_email": row[7] or "No email"
+                "ip_address": row[6] or "Unknown",
+                "user_name": row[7] or "Unknown",
+                "user_email": row[8] or "No email"
             })
         # Include users marked as banned even if bans table is empty/out of sync
         try:
@@ -1083,6 +1099,7 @@ def get_bans():
                     "banned_by": "system",
                     "banned_at": None,
                     "expires_at": row[4],
+                    "ip_address": "Unknown",
                     "user_name": row[1] or "Unknown",
                     "user_email": row[2] or "No email"
                 })
@@ -1641,6 +1658,19 @@ def ban_user(user_id):
         except Exception:
             pass
         
+        # Get the user's IP address from signup logs for IP-based ban tracking
+        banned_ip = None
+        try:
+            if db_type == 'postgres':
+                c.execute("SELECT signup_ip FROM user_signup_logs WHERE user_id = %s", (user_id,))
+            else:
+                c.execute("SELECT signup_ip FROM user_signup_logs WHERE user_id = ?", (user_id,))
+            ip_row = c.fetchone()
+            if ip_row:
+                banned_ip = ip_row[0] if ip_row else None
+        except Exception:
+            pass  # Table might not exist yet
+        
         if banned:
             expires_at = None
             if duration != 'permanent':
@@ -1663,23 +1693,24 @@ def ban_user(user_id):
                     (expires_at, reason, user_id)
                 )
                 c.execute("""
-                    INSERT INTO bans (user_id, reason, banned_by, banned_at, expires_at)
-                    VALUES (%s, %s, %s, %s, %s)
+                    INSERT INTO bans (user_id, reason, banned_by, banned_at, expires_at, ip_address)
+                    VALUES (%s, %s, %s, %s, %s, %s)
                     ON CONFLICT (user_id) DO UPDATE SET
                         reason = EXCLUDED.reason,
                         banned_by = EXCLUDED.banned_by,
                         banned_at = EXCLUDED.banned_at,
-                        expires_at = EXCLUDED.expires_at
-                """, (user_id, reason, admin['role'], datetime.now().isoformat(), expires_at))
+                        expires_at = EXCLUDED.expires_at,
+                        ip_address = EXCLUDED.ip_address
+                """, (user_id, reason, admin['role'], datetime.now().isoformat(), expires_at, banned_ip))
             else:
                 c.execute(
                     "UPDATE users SET is_banned = 1, ban_expires_at = ?, ban_reason = ? WHERE id = ?",
                     (expires_at, reason, user_id)
                 )
                 c.execute("""
-                    INSERT OR REPLACE INTO bans (user_id, reason, banned_by, banned_at, expires_at)
-                    VALUES (?, ?, ?, ?, ?)
-                """, (user_id, reason, admin['role'], datetime.now().isoformat(), expires_at))
+                    INSERT OR REPLACE INTO bans (user_id, reason, banned_by, banned_at, expires_at, ip_address)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """, (user_id, reason, admin['role'], datetime.now().isoformat(), expires_at, banned_ip))
             
             log_action(
                 "BAN",

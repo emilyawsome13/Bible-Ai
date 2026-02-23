@@ -467,7 +467,7 @@ def init_db():
                 CREATE TABLE IF NOT EXISTS bans (
                     id SERIAL PRIMARY KEY, user_id INTEGER UNIQUE,
                     reason TEXT, banned_by TEXT, banned_at TIMESTAMP,
-                    expires_at TIMESTAMP
+                    expires_at TIMESTAMP, ip_address TEXT
                 )
             ''')
             
@@ -560,7 +560,7 @@ def init_db():
             c.execute('''CREATE TABLE IF NOT EXISTS bans 
                          (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER UNIQUE,
                           reason TEXT, banned_by TEXT, banned_at TIMESTAMP,
-                          expires_at TIMESTAMP)''')
+                          expires_at TIMESTAMP, ip_address TEXT)''')
             
             # User activity logs for comprehensive audit trail
             c.execute('''
@@ -908,6 +908,24 @@ def migrate_db():
                 logger.info("Created user_signup_logs table")
             except Exception as e:
                 logger.warning(f"user_signup_logs table may already exist: {e}")
+            
+            # Migrate bans table - add ip_address column (Postgres)
+            try:
+                c.execute("ALTER TABLE bans ADD COLUMN IF NOT EXISTS ip_address TEXT")
+                logger.info("Added ip_address column to bans table")
+            except Exception as e:
+                logger.warning(f"ip_address column may already exist in bans: {e}")
+        
+        # Migrate bans table - add ip_address column (SQLite)
+        if db_type != 'postgres':
+            try:
+                c.execute("SELECT ip_address FROM bans LIMIT 1")
+            except:
+                try:
+                    c.execute("ALTER TABLE bans ADD COLUMN ip_address TEXT")
+                    logger.info("Added ip_address column to bans table")
+                except Exception as e:
+                    logger.warning(f"Could not add ip_address to bans: {e}")
         
         conn.commit()
         logger.info("Database migrations completed")
@@ -1253,6 +1271,140 @@ def check_ban_status(user_id):
         logger.error(f"Ban check error: {e}")
         conn.close()
         return (False, None, None)
+
+def check_ip_ban(ip_address):
+    """Check if an IP address is associated with any banned user. Returns (is_banned, reason, original_user_id)"""
+    if not ip_address or ip_address == 'unknown':
+        return (False, None, None)
+    
+    conn, db_type = get_db()
+    c = get_cursor(conn, db_type)
+    
+    try:
+        # Check bans table for this IP
+        if db_type == 'postgres':
+            c.execute("""
+                SELECT b.reason, b.user_id, b.expires_at
+                FROM bans b
+                WHERE b.ip_address = %s
+                AND (b.expires_at IS NULL OR b.expires_at > CURRENT_TIMESTAMP)
+                ORDER BY b.banned_at DESC
+                LIMIT 1
+            """, (ip_address,))
+        else:
+            now_iso = datetime.now().isoformat()
+            c.execute("""
+                SELECT b.reason, b.user_id, b.expires_at
+                FROM bans b
+                WHERE b.ip_address = ?
+                AND (b.expires_at IS NULL OR b.expires_at > ?)
+                ORDER BY b.banned_at DESC
+                LIMIT 1
+            """, (ip_address, now_iso))
+        
+        row = c.fetchone()
+        if row:
+            try:
+                reason = row['reason'] if hasattr(row, 'keys') else row[0]
+                user_id = row['user_id'] if hasattr(row, 'keys') else row[1]
+            except (TypeError, KeyError):
+                reason = row[0]
+                user_id = row[1]
+            conn.close()
+            return (True, reason, user_id)
+        
+        # Also check user_signup_logs joined with bans
+        # This catches cases where the IP wasn't recorded in the ban but the user signed up with it
+        if db_type == 'postgres':
+            c.execute("""
+                SELECT b.reason, b.user_id
+                FROM bans b
+                JOIN user_signup_logs usl ON b.user_id = usl.user_id
+                WHERE usl.signup_ip = %s
+                AND (b.expires_at IS NULL OR b.expires_at > CURRENT_TIMESTAMP)
+                ORDER BY b.banned_at DESC
+                LIMIT 1
+            """, (ip_address,))
+        else:
+            now_iso = datetime.now().isoformat()
+            c.execute("""
+                SELECT b.reason, b.user_id
+                FROM bans b
+                JOIN user_signup_logs usl ON b.user_id = usl.user_id
+                WHERE usl.signup_ip = ?
+                AND (b.expires_at IS NULL OR b.expires_at > ?)
+                ORDER BY b.banned_at DESC
+                LIMIT 1
+            """, (ip_address, now_iso))
+        
+        row = c.fetchone()
+        conn.close()
+        
+        if row:
+            try:
+                reason = row['reason'] if hasattr(row, 'keys') else row[0]
+                user_id = row['user_id'] if hasattr(row, 'keys') else row[1]
+            except (TypeError, KeyError):
+                reason = row[0]
+                user_id = row[1]
+            return (True, reason, user_id)
+        
+        return (False, None, None)
+    except Exception as e:
+        logger.error(f"IP ban check error: {e}")
+        conn.close()
+        return (False, None, None)
+
+def auto_ban_user(user_id, reason, original_user_id=None, ip_address=None):
+    """Auto-ban a user for IP-based ban evasion"""
+    conn, db_type = get_db()
+    c = get_cursor(conn, db_type)
+    
+    try:
+        auto_reason = f"Auto-banned: IP matches banned user (ID: {original_user_id}). Original reason: {reason}"
+        
+        if db_type == 'postgres':
+            c.execute(
+                "UPDATE users SET is_banned = TRUE, ban_expires_at = NULL, ban_reason = %s WHERE id = %s",
+                (auto_reason, user_id)
+            )
+            c.execute("""
+                INSERT INTO bans (user_id, reason, banned_by, banned_at, expires_at, ip_address)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                ON CONFLICT (user_id) DO UPDATE SET
+                    reason = EXCLUDED.reason,
+                    banned_by = EXCLUDED.banned_by,
+                    banned_at = EXCLUDED.banned_at,
+                    expires_at = EXCLUDED.expires_at,
+                    ip_address = EXCLUDED.ip_address
+            """, (user_id, auto_reason, 'system_auto', datetime.now().isoformat(), None, ip_address))
+        else:
+            c.execute(
+                "UPDATE users SET is_banned = 1, ban_expires_at = NULL, ban_reason = ? WHERE id = ?",
+                (auto_reason, user_id)
+            )
+            c.execute("""
+                INSERT OR REPLACE INTO bans (user_id, reason, banned_by, banned_at, expires_at, ip_address)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (user_id, auto_reason, 'system_auto', datetime.now().isoformat(), None, ip_address))
+        
+        conn.commit()
+        conn.close()
+        
+        # Log the auto-ban
+        log_action(
+            'system_auto',
+            'AUTO_BAN_IP',
+            target_user_id=user_id,
+            details={'reason': auto_reason, 'original_user_id': original_user_id, 'ip_address': ip_address}
+        )
+        
+        logger.info(f"Auto-banned user {user_id} for IP ban evasion (original user: {original_user_id}, IP: {ip_address})")
+        return True
+    except Exception as e:
+        logger.error(f"Auto-ban error: {e}")
+        conn.close()
+        return False
 
 # Register admin blueprint
 from admin import admin_bp
@@ -2056,6 +2208,12 @@ def callback():
         user = c.fetchone()
         is_first_signup = False
         
+        # Get client IP early for IP ban checking
+        client_ip = request.remote_addr or request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or 'unknown'
+        
+        # Check if this IP is banned (for new signups)
+        ip_banned, ban_reason, original_user_id = check_ip_ban(client_ip)
+        
         if not user:
             # First-time user - create new record and mark as first signup
             is_first_signup = True
@@ -2072,6 +2230,43 @@ def callback():
             else:
                 c.execute("SELECT * FROM users WHERE google_id = ?", (google_id,))
             user = c.fetchone()
+            
+            # Get the new user_id
+            try:
+                user_id = user['id'] if isinstance(user, dict) else user[0]
+            except (TypeError, KeyError):
+                user_id = user[0]
+            
+            # If IP is banned, auto-ban this new account
+            if ip_banned:
+                logger.warning(f"New signup from banned IP detected: user_id={user_id}, ip={client_ip}, original_user={original_user_id}")
+                auto_ban_user(user_id, ban_reason, original_user_id, client_ip)
+                
+                # Show ban page immediately
+                conn.close()
+                return render_template_string("""
+                <!DOCTYPE html>
+                <html>
+                <head><title>Account Banned</title>
+                <style>
+                    body { background: #0a0a0f; color: white; font-family: system-ui; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+                    .ban-container { text-align: center; padding: 40px; background: rgba(255,55,95,0.1); border: 1px solid #ff375f; border-radius: 20px; max-width: 420px; }
+                    h1 { color: #ff375f; margin-bottom: 20px; }
+                    .reason { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin: 20px 0; font-style: italic; }
+                    a { color: #0A84FF; text-decoration: none; }
+                </style></head>
+                <body>
+                    <div class="ban-container">
+                        <h1>Account Banned</h1>
+                        <p>Your account has been automatically suspended.</p>
+                        <div class="reason">Reason: {{ reason }}</div>
+                        <p>This IP address is associated with a previously banned account.</p>
+                        <p>If you believe this is a mistake, contact support.</p>
+                        <p><a href="/logout">Logout</a></p>
+                    </div>
+                </body>
+                </html>
+                """, reason=f"Auto-banned: IP matches banned user. Original: {ban_reason}"), 403
         
         # Get user_id for signup tracking
         try:
@@ -2080,7 +2275,6 @@ def callback():
             user_id = user[0]
         
         # Track signup/login in user_signup_logs for ID retention enforcement
-        client_ip = request.remote_addr or request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or 'unknown'
         user_agent = request.headers.get('User-Agent', '')[:500]
         now_iso = datetime.now().isoformat()
         
