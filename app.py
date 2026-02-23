@@ -617,6 +617,91 @@ def init_db():
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
+            
+            # Bible Learning XP Tables
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS verse_read_streak (
+                    user_id INTEGER PRIMARY KEY,
+                    current_streak INTEGER DEFAULT 0,
+                    longest_streak INTEGER DEFAULT 0,
+                    last_read_date DATE,
+                    total_verses_read INTEGER DEFAULT 0
+                )
+            ''')
+            
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS verse_memorized (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL,
+                    verse_id INTEGER NOT NULL,
+                    memorized_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    review_count INTEGER DEFAULT 0,
+                    last_reviewed TIMESTAMP,
+                    UNIQUE(user_id, verse_id)
+                )
+            ''')
+            
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS bible_study_notes (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL,
+                    verse_id INTEGER,
+                    book TEXT,
+                    chapter INTEGER,
+                    note_text TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS prayer_journal (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL,
+                    prayer_title TEXT,
+                    prayer_content TEXT NOT NULL,
+                    is_answered BOOLEAN DEFAULT FALSE,
+                    answered_at TIMESTAMP,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS reading_progress (
+                    user_id INTEGER PRIMARY KEY,
+                    current_book TEXT DEFAULT 'Genesis',
+                    current_chapter INTEGER DEFAULT 1,
+                    total_chapters_read INTEGER DEFAULT 0,
+                    books_completed TEXT DEFAULT '[]',
+                    last_read_at TIMESTAMP
+                )
+            ''')
+            
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS bible_trivia_scores (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL,
+                    category TEXT NOT NULL,
+                    questions_answered INTEGER DEFAULT 0,
+                    correct_answers INTEGER DEFAULT 0,
+                    best_streak INTEGER DEFAULT 0,
+                    last_played TIMESTAMP
+                )
+            ''')
+            
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS topic_study_progress (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL,
+                    topic TEXT NOT NULL,
+                    verses_studied INTEGER DEFAULT 0,
+                    study_time_minutes INTEGER DEFAULT 0,
+                    completed BOOLEAN DEFAULT FALSE,
+                    started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    completed_at TIMESTAMP,
+                    UNIQUE(user_id, topic)
+                )
+            ''')
         else:
             # SQLite tables
             c.execute('''CREATE TABLE IF NOT EXISTS verses 
@@ -754,6 +839,91 @@ def init_db():
                     type TEXT NOT NULL,
                     description TEXT,
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            # Bible Learning XP Tables
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS verse_read_streak (
+                    user_id INTEGER PRIMARY KEY,
+                    current_streak INTEGER DEFAULT 0,
+                    longest_streak INTEGER DEFAULT 0,
+                    last_read_date DATE,
+                    total_verses_read INTEGER DEFAULT 0
+                )
+            ''')
+            
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS verse_memorized (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    verse_id INTEGER NOT NULL,
+                    memorized_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    review_count INTEGER DEFAULT 0,
+                    last_reviewed TIMESTAMP,
+                    UNIQUE(user_id, verse_id)
+                )
+            ''')
+            
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS bible_study_notes (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    verse_id INTEGER,
+                    book TEXT,
+                    chapter INTEGER,
+                    note_text TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS prayer_journal (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    prayer_title TEXT,
+                    prayer_content TEXT NOT NULL,
+                    is_answered INTEGER DEFAULT 0,
+                    answered_at TIMESTAMP,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS reading_progress (
+                    user_id INTEGER PRIMARY KEY,
+                    current_book TEXT DEFAULT 'Genesis',
+                    current_chapter INTEGER DEFAULT 1,
+                    total_chapters_read INTEGER DEFAULT 0,
+                    books_completed TEXT DEFAULT '[]',
+                    last_read_at TIMESTAMP
+                )
+            ''')
+            
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS bible_trivia_scores (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    category TEXT NOT NULL,
+                    questions_answered INTEGER DEFAULT 0,
+                    correct_answers INTEGER DEFAULT 0,
+                    best_streak INTEGER DEFAULT 0,
+                    last_played TIMESTAMP
+                )
+            ''')
+            
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS topic_study_progress (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    topic TEXT NOT NULL,
+                    verses_studied INTEGER DEFAULT 0,
+                    study_time_minutes INTEGER DEFAULT 0,
+                    completed INTEGER DEFAULT 0,
+                    started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    completed_at TIMESTAMP,
+                    UNIQUE(user_id, topic)
                 )
             ''')
         
@@ -4023,6 +4193,742 @@ def get_user_profile_customization(user_id):
     except Exception as e:
         logger.error(f"Error getting profile customization: {e}")
         return jsonify({"error": str(e)}), 500
+    finally:
+        conn.close()
+
+# ==================== BIBLE LEARNING XP ENDPOINTS ====================
+
+@app.route('/api/bible/verse-read', methods=['POST'])
+def track_verse_read():
+    """Track when user reads a verse for streak and XP"""
+    if 'user_id' not in session:
+        return jsonify({"error": "Not logged in"}), 401
+    
+    data = request.get_json()
+    verse_id = data.get('verse_id')
+    
+    conn, db_type = get_db()
+    c = get_cursor(conn, db_type)
+    
+    try:
+        user_id = session['user_id']
+        today = datetime.now().date().isoformat()
+        
+        # Get or create streak record
+        if db_type == 'postgres':
+            c.execute("""
+                INSERT INTO verse_read_streak (user_id, current_streak, longest_streak, last_read_date, total_verses_read)
+                VALUES (%s, 1, 1, %s, 1)
+                ON CONFLICT (user_id) DO UPDATE SET
+                    current_streak = CASE 
+                        WHEN verse_read_streak.last_read_date = %s::date - INTERVAL '1 day' THEN verse_read_streak.current_streak + 1
+                        WHEN verse_read_streak.last_read_date = %s THEN verse_read_streak.current_streak
+                        ELSE 1
+                    END,
+                    longest_streak = GREATEST(verse_read_streak.longest_streak, 
+                        CASE WHEN verse_read_streak.last_read_date != %s THEN 
+                            CASE WHEN verse_read_streak.last_read_date = %s::date - INTERVAL '1 day' THEN verse_read_streak.current_streak + 1 ELSE 1 END
+                        ELSE verse_read_streak.current_streak END),
+                    last_read_date = %s,
+                    total_verses_read = verse_read_streak.total_verses_read + 1
+                RETURNING current_streak, longest_streak, total_verses_read
+            """, (user_id, today, today, today, today, today, today, today))
+        else:
+            c.execute("""
+                INSERT INTO verse_read_streak (user_id, current_streak, longest_streak, last_read_date, total_verses_read)
+                VALUES (?, 1, 1, ?, 1)
+                ON CONFLICT(user_id) DO UPDATE SET
+                    current_streak = CASE 
+                        WHEN verse_read_streak.last_read_date = date(?, '-1 day') THEN verse_read_streak.current_streak + 1
+                        WHEN verse_read_streak.last_read_date = ? THEN verse_read_streak.current_streak
+                        ELSE 1
+                    END,
+                    longest_streak = MAX(verse_read_streak.longest_streak, 
+                        CASE WHEN verse_read_streak.last_read_date != ? THEN 
+                            CASE WHEN verse_read_streak.last_read_date = date(?, '-1 day') THEN verse_read_streak.current_streak + 1 ELSE 1 END
+                        ELSE verse_read_streak.current_streak END),
+                    last_read_date = ?,
+                    total_verses_read = verse_read_streak.total_verses_read + 1
+            """, (user_id, today, today, today, today, today, today))
+            c.execute("SELECT current_streak, longest_streak, total_verses_read FROM verse_read_streak WHERE user_id = ?", (user_id,))
+        
+        row = c.fetchone()
+        current_streak = row[0] if row else 1
+        longest_streak = row[1] if row else 1
+        total_read = row[2] if row else 1
+        
+        # Award XP based on streak
+        base_xp = 10
+        streak_bonus = min(current_streak * 2, 50)  # Max 50 bonus XP
+        total_xp = base_xp + streak_bonus
+        
+        # Award the XP
+        award_xp_to_user(user_id, total_xp, f"Read verse (Streak: {current_streak} days)")
+        
+        conn.commit()
+        return jsonify({
+            "success": True,
+            "xp_earned": total_xp,
+            "current_streak": current_streak,
+            "longest_streak": longest_streak,
+            "total_verses_read": total_read,
+            "message": f"📖 +{total_xp} XP! {current_streak} day streak!"
+        })
+    except Exception as e:
+        logger.error(f"Error tracking verse read: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/bible/memorize', methods=['POST'])
+def memorize_verse():
+    """Mark a verse as memorized and award XP"""
+    if 'user_id' not in session:
+        return jsonify({"error": "Not logged in"}), 401
+    
+    data = request.get_json()
+    verse_id = data.get('verse_id')
+    
+    if not verse_id:
+        return jsonify({"error": "verse_id required"}), 400
+    
+    conn, db_type = get_db()
+    c = get_cursor(conn, db_type)
+    
+    try:
+        user_id = session['user_id']
+        
+        # Check if already memorized
+        if db_type == 'postgres':
+            c.execute("SELECT id FROM verse_memorized WHERE user_id = %s AND verse_id = %s", (user_id, verse_id))
+        else:
+            c.execute("SELECT id FROM verse_memorized WHERE user_id = ? AND verse_id = ?", (user_id, verse_id))
+        
+        if c.fetchone():
+            return jsonify({"error": "Verse already memorized"}), 400
+        
+        # Add to memorized
+        if db_type == 'postgres':
+            c.execute("""
+                INSERT INTO verse_memorized (user_id, verse_id, memorized_at)
+                VALUES (%s, %s, CURRENT_TIMESTAMP)
+            """, (user_id, verse_id))
+        else:
+            c.execute("""
+                INSERT INTO verse_memorized (user_id, verse_id, memorized_at)
+                VALUES (?, ?, datetime('now'))
+            """, (user_id, verse_id))
+        
+        # Award XP for memorization
+        award_xp_to_user(user_id, 100, f"Memorized verse #{verse_id}")
+        
+        # Count total memorized
+        if db_type == 'postgres':
+            c.execute("SELECT COUNT(*) FROM verse_memorized WHERE user_id = %s", (user_id,))
+        else:
+            c.execute("SELECT COUNT(*) FROM verse_memorized WHERE user_id = ?", (user_id,))
+        
+        total_memorized = c.fetchone()[0]
+        
+        conn.commit()
+        return jsonify({
+            "success": True,
+            "xp_earned": 100,
+            "total_memorized": total_memorized,
+            "message": f"🧠 +100 XP! Verse memorized! ({total_memorized} total)"
+        })
+    except Exception as e:
+        logger.error(f"Error memorizing verse: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/bible/study-note', methods=['POST'])
+def add_study_note():
+    """Add a Bible study note and earn XP"""
+    if 'user_id' not in session:
+        return jsonify({"error": "Not logged in"}), 401
+    
+    data = request.get_json()
+    verse_id = data.get('verse_id')
+    book = data.get('book')
+    chapter = data.get('chapter')
+    note_text = data.get('note_text', '').strip()
+    
+    if not note_text or len(note_text) < 10:
+        return jsonify({"error": "Note must be at least 10 characters"}), 400
+    
+    conn, db_type = get_db()
+    c = get_cursor(conn, db_type)
+    
+    try:
+        user_id = session['user_id']
+        
+        # Add the note
+        if db_type == 'postgres':
+            c.execute("""
+                INSERT INTO bible_study_notes (user_id, verse_id, book, chapter, note_text, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                RETURNING id
+            """, (user_id, verse_id, book, chapter, note_text))
+        else:
+            c.execute("""
+                INSERT INTO bible_study_notes (user_id, verse_id, book, chapter, note_text, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+            """, (user_id, verse_id, book, chapter, note_text))
+        
+        # Award XP based on note length
+        xp = min(50 + (len(note_text) // 50), 200)  # 50-200 XP based on length
+        award_xp_to_user(user_id, xp, "Added Bible study note")
+        
+        conn.commit()
+        return jsonify({
+            "success": True,
+            "xp_earned": xp,
+            "message": f"📝 +{xp} XP! Study note added!"
+        })
+    except Exception as e:
+        logger.error(f"Error adding study note: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/bible/prayer', methods=['POST'])
+def add_prayer_journal():
+    """Add prayer to journal and earn XP"""
+    if 'user_id' not in session:
+        return jsonify({"error": "Not logged in"}), 401
+    
+    data = request.get_json()
+    prayer_title = data.get('title', 'Untitled Prayer')
+    prayer_content = data.get('content', '').strip()
+    
+    if not prayer_content or len(prayer_content) < 20:
+        return jsonify({"error": "Prayer must be at least 20 characters"}), 400
+    
+    conn, db_type = get_db()
+    c = get_cursor(conn, db_type)
+    
+    try:
+        user_id = session['user_id']
+        
+        # Add prayer
+        if db_type == 'postgres':
+            c.execute("""
+                INSERT INTO prayer_journal (user_id, prayer_title, prayer_content, created_at)
+                VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
+                RETURNING id
+            """, (user_id, prayer_title, prayer_content))
+        else:
+            c.execute("""
+                INSERT INTO prayer_journal (user_id, prayer_title, prayer_content, created_at)
+                VALUES (?, ?, ?, datetime('now'))
+            """, (user_id, prayer_title, prayer_content))
+        
+        # Award XP
+        award_xp_to_user(user_id, 75, "Added prayer to journal")
+        
+        conn.commit()
+        return jsonify({
+            "success": True,
+            "xp_earned": 75,
+            "message": "🙏 +75 XP! Prayer recorded!"
+        })
+    except Exception as e:
+        logger.error(f"Error adding prayer: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/bible/reading-progress', methods=['GET', 'POST'])
+def reading_progress():
+    """Get or update Bible reading progress"""
+    if 'user_id' not in session:
+        return jsonify({"error": "Not logged in"}), 401
+    
+    user_id = session['user_id']
+    conn, db_type = get_db()
+    c = get_cursor(conn, db_type)
+    
+    try:
+        if request.method == 'POST':
+            data = request.get_json()
+            book = data.get('book')
+            chapter = data.get('chapter')
+            completed = data.get('completed', False)
+            
+            if db_type == 'postgres':
+                # Get current progress
+                c.execute("SELECT books_completed, total_chapters_read FROM reading_progress WHERE user_id = %s", (user_id,))
+                row = c.fetchone()
+                
+                books_completed = json.loads(row[0]) if row and row[0] else []
+                total_chapters = row[1] if row else 0
+                
+                if completed and book not in books_completed:
+                    books_completed.append(book)
+                    total_chapters += 1
+                    
+                    # Award XP for completing a chapter
+                    award_xp_to_user(user_id, 25, f"Read {book} chapter {chapter}")
+                    
+                    # Bonus XP for completing a book
+                    if len(books_completed) % 5 == 0:  # Every 5 books
+                        award_xp_to_user(user_id, 500, f"Completed {len(books_completed)} books!")
+                
+                c.execute("""
+                    INSERT INTO reading_progress (user_id, current_book, current_chapter, books_completed, total_chapters_read, last_read_at)
+                    VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+                    ON CONFLICT (user_id) DO UPDATE SET
+                        current_book = %s,
+                        current_chapter = %s,
+                        books_completed = %s,
+                        total_chapters_read = %s,
+                        last_read_at = CURRENT_TIMESTAMP
+                """, (user_id, book, chapter, json.dumps(books_completed), total_chapters,
+                      book, chapter, json.dumps(books_completed), total_chapters))
+            else:
+                c.execute("SELECT books_completed, total_chapters_read FROM reading_progress WHERE user_id = ?", (user_id,))
+                row = c.fetchone()
+                
+                books_completed = json.loads(row[0]) if row and row[0] else []
+                total_chapters = row[1] if row else 0
+                
+                if completed and book not in books_completed:
+                    books_completed.append(book)
+                    total_chapters += 1
+                    award_xp_to_user(user_id, 25, f"Read {book} chapter {chapter}")
+                    if len(books_completed) % 5 == 0:
+                        award_xp_to_user(user_id, 500, f"Completed {len(books_completed)} books!")
+                
+                c.execute("""
+                    INSERT OR REPLACE INTO reading_progress 
+                    (user_id, current_book, current_chapter, books_completed, total_chapters_read, last_read_at)
+                    VALUES (?, ?, ?, ?, ?, datetime('now'))
+                """, (user_id, book, chapter, json.dumps(books_completed), total_chapters))
+            
+            conn.commit()
+            return jsonify({
+                "success": True,
+                "books_completed": len(books_completed),
+                "total_chapters": total_chapters,
+                "message": f"📚 Progress updated! {len(books_completed)} books completed!"
+            })
+        
+        else:  # GET
+            if db_type == 'postgres':
+                c.execute("SELECT * FROM reading_progress WHERE user_id = %s", (user_id,))
+            else:
+                c.execute("SELECT * FROM reading_progress WHERE user_id = ?", (user_id,))
+            
+            row = c.fetchone()
+            if row:
+                return jsonify({
+                    "current_book": row[1] if hasattr(row, '__iter__') else row['current_book'],
+                    "current_chapter": row[2] if hasattr(row, '__iter__') else row['current_chapter'],
+                    "total_chapters_read": row[3] if hasattr(row, '__iter__') else row['total_chapters_read'],
+                    "books_completed": json.loads(row[4]) if hasattr(row, '__iter__') else json.loads(row['books_completed'])
+                })
+            return jsonify({"current_book": "Genesis", "current_chapter": 1, "total_chapters_read": 0, "books_completed": []})
+    except Exception as e:
+        logger.error(f"Error with reading progress: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/bible/trivia', methods=['POST'])
+def submit_trivia_answer():
+    """Submit Bible trivia answer and earn XP"""
+    if 'user_id' not in session:
+        return jsonify({"error": "Not logged in"}), 401
+    
+    data = request.get_json()
+    category = data.get('category', 'general')
+    is_correct = data.get('is_correct', False)
+    
+    conn, db_type = get_db()
+    c = get_cursor(conn, db_type)
+    
+    try:
+        user_id = session['user_id']
+        
+        # Get current stats
+        if db_type == 'postgres':
+            c.execute("""
+                SELECT questions_answered, correct_answers, best_streak FROM bible_trivia_scores
+                WHERE user_id = %s AND category = %s
+            """, (user_id, category))
+        else:
+            c.execute("""
+                SELECT questions_answered, correct_answers, best_streak FROM bible_trivia_scores
+                WHERE user_id = ? AND category = ?
+            """, (user_id, category))
+        
+        row = c.fetchone()
+        total_answered = (row[0] if row else 0) + 1
+        total_correct = (row[1] if row else 0) + (1 if is_correct else 0)
+        
+        # Calculate current streak (simplified - in real app track consecutive correct)
+        current_streak = (row[2] if row else 0)
+        if is_correct:
+            current_streak += 1
+        else:
+            current_streak = 0
+        
+        best_streak = max(current_streak, row[2] if row else 0)
+        
+        # Update stats
+        if db_type == 'postgres':
+            c.execute("""
+                INSERT INTO bible_trivia_scores (user_id, category, questions_answered, correct_answers, best_streak, last_played)
+                VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+                ON CONFLICT (user_id, category) DO UPDATE SET
+                    questions_answered = %s,
+                    correct_answers = %s,
+                    best_streak = GREATEST(bible_trivia_scores.best_streak, %s),
+                    last_played = CURRENT_TIMESTAMP
+            """, (user_id, category, total_answered, total_correct, best_streak,
+                  total_answered, total_correct, best_streak))
+        else:
+            c.execute("""
+                INSERT OR REPLACE INTO bible_trivia_scores 
+                (user_id, category, questions_answered, correct_answers, best_streak, last_played)
+                VALUES (?, ?, ?, ?, ?, datetime('now'))
+            """, (user_id, category, total_answered, total_correct, best_streak))
+        
+        # Award XP
+        if is_correct:
+            base_xp = 20
+            streak_bonus = min(current_streak * 3, 30)
+            total_xp = base_xp + streak_bonus
+            award_xp_to_user(user_id, total_xp, f"Trivia correct (streak: {current_streak})")
+            message = f"✅ +{total_xp} XP! Correct! Streak: {current_streak}"
+        else:
+            message = "❌ Not quite! Try again!"
+            total_xp = 0
+        
+        conn.commit()
+        return jsonify({
+            "success": True,
+            "is_correct": is_correct,
+            "xp_earned": total_xp,
+            "current_streak": current_streak,
+            "total_correct": total_correct,
+            "message": message
+        })
+    except Exception as e:
+        logger.error(f"Error with trivia: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        conn.close()
+
+# Bible Trivia Questions
+BIBLE_TRIVIA_QUESTIONS = [
+    {"id": 1, "question": "Who was the first man created?", "options": ["Adam", "Noah", "Moses", "Abraham"], "answer": 0, "category": "creation"},
+    {"id": 2, "question": "How many days did God take to create the world?", "options": ["3 days", "6 days", "7 days", "40 days"], "answer": 1, "category": "creation"},
+    {"id": 3, "question": "Who built the ark?", "options": ["Moses", "Noah", "Abraham", "David"], "answer": 1, "category": "old_testament"},
+    {"id": 4, "question": "How many disciples did Jesus have?", "options": ["10", "11", "12", "13"], "answer": 2, "category": "gospels"},
+    {"id": 5, "question": "Who betrayed Jesus?", "options": ["Peter", "Judas", "Thomas", "John"], "answer": 1, "category": "gospels"},
+    {"id": 6, "question": "What is the first book of the Bible?", "options": ["Exodus", "Genesis", "Matthew", "Psalms"], "answer": 1, "category": "bible_basics"},
+    {"id": 7, "question": "Who led the Israelites out of Egypt?", "options": ["Abraham", "Joseph", "Moses", "David"], "answer": 2, "category": "old_testament"},
+    {"id": 8, "question": "What did Jesus turn water into?", "options": ["Oil", "Blood", "Wine", "Milk"], "answer": 2, "category": "miracles"},
+    {"id": 9, "question": "How many books are in the Bible?", "options": ["66", "72", "39", "27"], "answer": 0, "category": "bible_basics"},
+    {"id": 10, "question": "Who was swallowed by a great fish?", "options": ["Jonah", "Peter", "Paul", "John"], "answer": 0, "category": "old_testament"},
+    {"id": 11, "question": "What is the Golden Rule?", "options": [
+        "Love your neighbor",
+        "Do to others as you would have them do to you",
+        "Honor your parents",
+        "Pray without ceasing"
+    ], "answer": 1, "category": "teachings"},
+    {"id": 12, "question": "Who was the strongest man in the Bible?", "options": ["Goliath", "Samson", "David", "Solomon"], "answer": 1, "category": "old_testament"},
+    {"id": 13, "question": "What is the last book of the Bible?", "options": ["Jude", "Revelation", "John", "Acts"], "answer": 1, "category": "bible_basics"},
+    {"id": 14, "question": "Who wrote most of the Psalms?", "options": ["Solomon", "David", "Moses", "Asaph"], "answer": 1, "category": "wisdom"},
+    {"id": 15, "question": "What was Paul's name before conversion?", "options": ["Simon", "Saul", "Stephen", "Silas"], "answer": 1, "category": "acts"},
+    {"id": 16, "question": "How many commandments did God give Moses?", "options": ["5", "10", "12", "7"], "answer": 1, "category": "law"},
+    {"id": 17, "question": "Who was the first murderer in the Bible?", "options": ["Lamech", "Cain", "Seth", "Abel"], "answer": 1, "category": "old_testament"},
+    {"id": 18, "question": "What did Jesus feed the 5,000 with?", "options": ["Fish and bread", "Manna", "Wine", "Locusts"], "answer": 0, "category": "miracles"},
+    {"id": 19, "question": "Who was the mother of Jesus?", "options": ["Martha", "Mary Magdalene", "Mary", "Elizabeth"], "answer": 2, "category": "gospels"},
+    {"id": 20, "question": "What is the shortest verse in the Bible?", "options": [
+        "Jesus wept",
+        "God is love",
+        "Pray always",
+        "Love never fails"
+    ], "answer": 0, "category": "bible_basics"}
+]
+
+@app.route('/api/bible/trivia-questions', methods=['GET'])
+def get_trivia_questions():
+    """Get Bible trivia questions"""
+    category = request.args.get('category', 'all')
+    limit = min(int(request.args.get('limit', 5)), 10)
+    
+    questions = BIBLE_TRIVIA_QUESTIONS
+    if category != 'all':
+        questions = [q for q in questions if q['category'] == category]
+    
+    import random
+    selected = random.sample(questions, min(limit, len(questions)))
+    
+    # Remove answer from response
+    return jsonify([{
+        "id": q["id"],
+        "question": q["question"],
+        "options": q["options"],
+        "category": q["category"]
+    } for q in selected])
+
+@app.route('/api/bible/verify-answer', methods=['POST'])
+def verify_trivia_answer():
+    """Verify a trivia answer"""
+    data = request.get_json()
+    question_id = data.get('question_id')
+    selected_answer = data.get('answer')
+    
+    question = next((q for q in BIBLE_TRIVIA_QUESTIONS if q["id"] == question_id), None)
+    if not question:
+        return jsonify({"error": "Question not found"}), 404
+    
+    is_correct = question["answer"] == selected_answer
+    
+    return jsonify({
+        "is_correct": is_correct,
+        "correct_answer": question["answer"],
+        "explanation": f"The correct answer is: {question['options'][question['answer']]}"
+    })
+
+@app.route('/api/bible/topic-study', methods=['POST'])
+def track_topic_study():
+    """Track progress on studying a specific Bible topic"""
+    if 'user_id' not in session:
+        return jsonify({"error": "Not logged in"}), 401
+    
+    data = request.get_json()
+    topic = data.get('topic')
+    verses_studied = data.get('verses_studied', 1)
+    study_time = data.get('study_time_minutes', 0)
+    completed = data.get('completed', False)
+    
+    if not topic:
+        return jsonify({"error": "topic required"}), 400
+    
+    conn, db_type = get_db()
+    c = get_cursor(conn, db_type)
+    
+    try:
+        user_id = session['user_id']
+        
+        if db_type == 'postgres':
+            c.execute("""
+                INSERT INTO topic_study_progress (user_id, topic, verses_studied, study_time_minutes, completed, started_at)
+                VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+                ON CONFLICT (user_id, topic) DO UPDATE SET
+                    verses_studied = topic_study_progress.verses_studied + %s,
+                    study_time_minutes = topic_study_progress.study_time_minutes + %s,
+                    completed = %s OR topic_study_progress.completed,
+                    completed_at = CASE WHEN %s AND NOT topic_study_progress.completed THEN CURRENT_TIMESTAMP 
+                                      ELSE topic_study_progress.completed_at END
+                RETURNING verses_studied, study_time_minutes, completed
+            """, (user_id, topic, verses_studied, study_time, completed,
+                  verses_studied, study_time, completed, completed))
+        else:
+            c.execute("""
+                INSERT INTO topic_study_progress (user_id, topic, verses_studied, study_time_minutes, completed, started_at)
+                VALUES (?, ?, ?, ?, ?, datetime('now'))
+                ON CONFLICT(user_id, topic) DO UPDATE SET
+                    verses_studied = topic_study_progress.verses_studied + ?,
+                    study_time_minutes = topic_study_progress.study_time_minutes + ?,
+                    completed = ? OR topic_study_progress.completed
+            """, (user_id, topic, verses_studied, study_time, completed, verses_studied, study_time, completed))
+            c.execute("SELECT verses_studied, study_time_minutes, completed FROM topic_study_progress WHERE user_id = ? AND topic = ?", 
+                     (user_id, topic))
+        
+        row = c.fetchone()
+        total_verses = row[0] if row else verses_studied
+        total_time = row[1] if row else study_time
+        is_completed = row[2] if row else completed
+        
+        # Award XP
+        xp = verses_studied * 15 + study_time * 2  # 15 XP per verse, 2 XP per minute
+        if completed and not is_completed:
+            xp += 200  # Bonus for completing topic study
+        
+        award_xp_to_user(user_id, xp, f"Studied topic: {topic}")
+        
+        conn.commit()
+        return jsonify({
+            "success": True,
+            "xp_earned": xp,
+            "total_verses_studied": total_verses,
+            "total_study_time": total_time,
+            "topic_completed": is_completed,
+            "message": f"📚 +{xp} XP! Studied {topic}!"
+        })
+    except Exception as e:
+        logger.error(f"Error tracking topic study: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/bible/learning-stats', methods=['GET'])
+def get_learning_stats():
+    """Get user's Bible learning statistics"""
+    if 'user_id' not in session:
+        return jsonify({"error": "Not logged in"}), 401
+    
+    user_id = session['user_id']
+    conn, db_type = get_db()
+    c = get_cursor(conn, db_type)
+    
+    try:
+        stats = {
+            "reading_streak": {"current": 0, "longest": 0, "total_verses": 0},
+            "memorized": 0,
+            "study_notes": 0,
+            "prayers": 0,
+            "reading_progress": {"books_completed": [], "total_chapters": 0},
+            "trivia": {"total_answered": 0, "correct": 0},
+            "topic_studies": []
+        }
+        
+        # Reading streak
+        if db_type == 'postgres':
+            c.execute("SELECT current_streak, longest_streak, total_verses_read FROM verse_read_streak WHERE user_id = %s", (user_id,))
+        else:
+            c.execute("SELECT current_streak, longest_streak, total_verses_read FROM verse_read_streak WHERE user_id = ?", (user_id,))
+        row = c.fetchone()
+        if row:
+            stats["reading_streak"] = {"current": row[0], "longest": row[1], "total_verses": row[2]}
+        
+        # Memorized verses
+        if db_type == 'postgres':
+            c.execute("SELECT COUNT(*) FROM verse_memorized WHERE user_id = %s", (user_id,))
+        else:
+            c.execute("SELECT COUNT(*) FROM verse_memorized WHERE user_id = ?", (user_id,))
+        stats["memorized"] = c.fetchone()[0]
+        
+        # Study notes
+        if db_type == 'postgres':
+            c.execute("SELECT COUNT(*) FROM bible_study_notes WHERE user_id = %s", (user_id,))
+        else:
+            c.execute("SELECT COUNT(*) FROM bible_study_notes WHERE user_id = ?", (user_id,))
+        stats["study_notes"] = c.fetchone()[0]
+        
+        # Prayers
+        if db_type == 'postgres':
+            c.execute("SELECT COUNT(*) FROM prayer_journal WHERE user_id = %s", (user_id,))
+        else:
+            c.execute("SELECT COUNT(*) FROM prayer_journal WHERE user_id = ?", (user_id,))
+        stats["prayers"] = c.fetchone()[0]
+        
+        # Reading progress
+        if db_type == 'postgres':
+            c.execute("SELECT books_completed, total_chapters_read FROM reading_progress WHERE user_id = %s", (user_id,))
+        else:
+            c.execute("SELECT books_completed, total_chapters_read FROM reading_progress WHERE user_id = ?", (user_id,))
+        row = c.fetchone()
+        if row:
+            stats["reading_progress"] = {
+                "books_completed": json.loads(row[0]) if row[0] else [],
+                "total_chapters": row[1]
+            }
+        
+        # Trivia totals
+        if db_type == 'postgres':
+            c.execute("""
+                SELECT SUM(questions_answered), SUM(correct_answers) 
+                FROM bible_trivia_scores WHERE user_id = %s
+            """, (user_id,))
+        else:
+            c.execute("""
+                SELECT SUM(questions_answered), SUM(correct_answers) 
+                FROM bible_trivia_scores WHERE user_id = ?
+            """, (user_id,))
+        row = c.fetchone()
+        if row:
+            stats["trivia"] = {"total_answered": row[0] or 0, "correct": row[1] or 0}
+        
+        # Topic studies
+        if db_type == 'postgres':
+            c.execute("""
+                SELECT topic, verses_studied, study_time_minutes, completed 
+                FROM topic_study_progress WHERE user_id = %s ORDER BY started_at DESC
+            """, (user_id,))
+        else:
+            c.execute("""
+                SELECT topic, verses_studied, study_time_minutes, completed 
+                FROM topic_study_progress WHERE user_id = ? ORDER BY started_at DESC
+            """, (user_id,))
+        stats["topic_studies"] = [
+            {"topic": r[0], "verses": r[1], "minutes": r[2], "completed": bool(r[3])}
+            for r in c.fetchall()
+        ]
+        
+        return jsonify(stats)
+    except Exception as e:
+        logger.error(f"Error getting learning stats: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        conn.close()
+
+# Helper function to award XP
+def award_xp_to_user(user_id, amount, description):
+    """Helper to award XP to a user"""
+    conn, db_type = get_db()
+    c = get_cursor(conn, db_type)
+    
+    try:
+        # Get current XP
+        if db_type == 'postgres':
+            c.execute("SELECT xp, total_xp_earned, level FROM user_xp WHERE user_id = %s", (user_id,))
+        else:
+            c.execute("SELECT xp, total_xp_earned, level FROM user_xp WHERE user_id = ?", (user_id,))
+        
+        row = c.fetchone()
+        if row:
+            current_xp = row[0] or 0
+            total_earned = row[1] or 0
+            current_level = row[2] or 1
+        else:
+            current_xp = 0
+            total_earned = 0
+            current_level = 1
+        
+        new_xp = current_xp + amount
+        new_total = total_earned + amount
+        new_level = (new_total // 1000) + 1
+        
+        # Update user XP
+        if db_type == 'postgres':
+            c.execute("""
+                INSERT INTO user_xp (user_id, xp, total_xp_earned, level, updated_at)
+                VALUES (%s, %s, %s, %s, CURRENT_TIMESTAMP)
+                ON CONFLICT (user_id) DO UPDATE SET
+                    xp = %s,
+                    total_xp_earned = %s,
+                    level = %s,
+                    updated_at = CURRENT_TIMESTAMP
+            """, (user_id, new_xp, new_total, new_level, new_xp, new_total, new_level))
+            
+            c.execute("""
+                INSERT INTO xp_transactions (user_id, amount, type, description, timestamp)
+                VALUES (%s, %s, 'bible_learning', %s, CURRENT_TIMESTAMP)
+            """, (user_id, amount, description))
+        else:
+            c.execute("""
+                INSERT OR REPLACE INTO user_xp (user_id, xp, total_xp_earned, level, updated_at)
+                VALUES (?, ?, ?, ?, datetime('now'))
+            """, (user_id, new_xp, new_total, new_level))
+            
+            c.execute("""
+                INSERT INTO xp_transactions (user_id, amount, type, description, timestamp)
+                VALUES (?, ?, 'bible_learning', ?, datetime('now'))
+            """, (user_id, amount, description))
+        
+        conn.commit()
+        return {"success": True, "new_total": new_xp, "level": new_level, "leveled_up": new_level > current_level}
+    except Exception as e:
+        logger.error(f"Error awarding XP: {e}")
+        return {"success": False, "error": str(e)}
     finally:
         conn.close()
 
