@@ -3622,6 +3622,77 @@
         .mt-4 { margin-top: 16px; }
         .mb-2 { margin-bottom: 8px; }
         .mb-4 { margin-bottom: 16px; }
+        
+        /* ===== SHOP STYLES ===== */
+        .shop-container { padding: 20px; max-width: 1200px; margin: 0 auto; }
+        .shop-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px; }
+        .shop-title { font-size: 28px; font-weight: 700; margin: 0; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .shop-xp-display { display: flex; align-items: center; gap: 12px; background: var(--surface); padding: 12px 20px; border-radius: 50px; border: 1px solid var(--border); }
+        .shop-xp-icon { font-size: 20px; }
+        #shopXpAmount { font-weight: 700; font-size: 18px; color: var(--primary); }
+        .shop-level { font-size: 12px; color: var(--text-secondary); background: var(--glass); padding: 4px 10px; border-radius: 20px; }
+        
+        .shop-categories { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; overflow-x: auto; padding-bottom: 8px; }
+        .shop-category-btn { padding: 8px 16px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary); font-size: 13px; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+        .shop-category-btn:hover { background: var(--glass); border-color: var(--primary); color: var(--text-primary); }
+        .shop-category-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        
+        .shop-tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
+        .shop-tab-btn { padding: 12px 24px; background: transparent; border: none; color: var(--text-secondary); font-size: 15px; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+        .shop-tab-btn:hover { color: var(--text-primary); }
+        .shop-tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+        
+        .shop-content { min-height: 400px; }
+        .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
+        @media (min-width: 768px) { .shop-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); } }
+        
+        .shop-item { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px; text-align: center; transition: all 0.2s; cursor: pointer; position: relative; overflow: hidden; }
+        .shop-item:hover { transform: translateY(-4px); box-shadow: 0 12px 32px var(--shadow); border-color: var(--primary); }
+        .shop-item.owned { border-color: var(--success); opacity: 0.7; }
+        .shop-item.equipped { border-color: var(--primary); box-shadow: 0 0 20px var(--primary-glow); }
+        .shop-item.legendary { border-color: #FFD700; background: linear-gradient(135deg, rgba(255,215,0,0.1), var(--surface)); }
+        .shop-item.epic { border-color: #BF5AF2; background: linear-gradient(135deg, rgba(191,90,242,0.1), var(--surface)); }
+        .shop-item.rare { border-color: #0A84FF; background: linear-gradient(135deg, rgba(10,132,255,0.1), var(--surface)); }
+        
+        .shop-item-icon { font-size: 48px; margin-bottom: 12px; display: block; }
+        .shop-item-name { font-weight: 600; font-size: 14px; margin-bottom: 6px; color: var(--text-primary); }
+        .shop-item-desc { font-size: 11px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.4; }
+        .shop-item-rarity { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; padding: 3px 8px; border-radius: 10px; display: inline-block; margin-bottom: 10px; }
+        .shop-item-rarity.legendary { background: rgba(255,215,0,0.2); color: #FFD700; }
+        .shop-item-rarity.epic { background: rgba(191,90,242,0.2); color: #BF5AF2; }
+        .shop-item-rarity.rare { background: rgba(10,132,255,0.2); color: #0A84FF; }
+        .shop-item-rarity.common { background: rgba(142,142,147,0.2); color: var(--text-secondary); }
+        
+        .shop-item-price { display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700; color: var(--primary); font-size: 16px; margin-bottom: 10px; }
+        .shop-item-price.owned { color: var(--success); }
+        
+        .shop-item-btn { width: 100%; padding: 10px; border-radius: 10px; border: none; background: var(--primary); color: white; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .shop-item-btn:hover:not(:disabled) { background: var(--secondary); transform: scale(1.02); }
+        .shop-item-btn:disabled { background: var(--surface); color: var(--text-secondary); cursor: not-allowed; }
+        .shop-item-btn.equip { background: var(--success); }
+        .shop-item-btn.equip:hover { background: #2eb872; }
+        .shop-item-btn.unequip { background: var(--warning); }
+        
+        .shop-empty { text-align: center; padding: 60px 20px; color: var(--text-secondary); }
+        .shop-empty-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.5; }
+        
+        /* Profile customization display */
+        .profile-frame { position: absolute; inset: -8px; border-radius: 50%; pointer-events: none; }
+        .profile-frame.gold { border: 3px solid #FFD700; box-shadow: 0 0 20px rgba(255,215,0,0.5); }
+        .profile-frame.silver { border: 3px solid #C0C0C0; box-shadow: 0 0 15px rgba(192,192,192,0.4); }
+        .profile-frame.angel::before { content: '🪽'; position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 24px; animation: float 2s ease-in-out infinite; }
+        
+        .profile-name.rainbow { background: linear-gradient(90deg, #FF0000, #FF7F00, #FFFF00, #00FF00, #0000FF, #4B0082, #9400D3); -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: rainbow 3s linear infinite; }
+        .profile-name.gold { color: #FFD700; text-shadow: 0 0 10px rgba(255,215,0,0.5); }
+        .profile-name.neon { color: #39FF14; text-shadow: 0 0 10px #39FF14; animation: pulse 1.5s ease-in-out infinite; }
+        
+        .profile-badge { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; font-size: 12px; margin-left: 4px; }
+        
+        .profile-title { font-size: 12px; color: var(--primary); font-weight: 600; margin-top: 4px; }
+        
+        @keyframes rainbow { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
+        @keyframes float { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-5px); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
     </style>
 </head>
 <body>
@@ -3666,6 +3737,10 @@
                 <button class="nav-item" onclick="switchTab('comments')" data-tab="comments">
                     <span class="nav-icon">&#128172;</span>
                     <span>Comments</span>
+                </button>
+                <button class="nav-item" onclick="switchTab('shop')" data-tab="shop">
+                    <span class="nav-icon">&#128722;</span>
+                    <span>Shop</span>
                 </button>
                 <button class="nav-item" onclick="switchTab('profile')" data-tab="profile">
                     <span class="nav-icon">&#128100;</span>
@@ -4067,14 +4142,52 @@
                 </div>
             </div>
 
+            <!-- SHOP TAB -->
+            <div id="shop" class="tab-view">
+                <div class="shop-container">
+                    <div class="shop-header">
+                        <h2 class="shop-title">🛒 Item Shop</h2>
+                        <div class="shop-xp-display">
+                            <span class="shop-xp-icon">⚡</span>
+                            <span id="shopXpAmount">0 XP</span>
+                            <span class="shop-level" id="shopLevel">Level 1</span>
+                        </div>
+                    </div>
+                    
+                    <div class="shop-categories">
+                        <button class="shop-category-btn active" data-category="all" onclick="filterShop('all')">All</button>
+                        <button class="shop-category-btn" data-category="frame" onclick="filterShop('frame')">🖼️ Frames</button>
+                        <button class="shop-category-btn" data-category="name_color" onclick="filterShop('name_color')">🎨 Colors</button>
+                        <button class="shop-category-btn" data-category="title" onclick="filterShop('title')">👑 Titles</button>
+                        <button class="shop-category-btn" data-category="badge" onclick="filterShop('badge')">🏅 Badges</button>
+                        <button class="shop-category-btn" data-category="chat_effect" onclick="filterShop('chat_effect')">💬 Chat</button>
+                        <button class="shop-category-btn" data-category="profile_bg" onclick="filterShop('profile_bg')">🖼️ Backgrounds</button>
+                        <button class="shop-category-btn" data-category="consumable" onclick="filterShop('consumable')">⚡ Boosts</button>
+                    </div>
+                    
+                    <div class="shop-tabs">
+                        <button class="shop-tab-btn active" onclick="switchShopTab('shop')">Shop</button>
+                        <button class="shop-tab-btn" onclick="switchShopTab('inventory')">My Inventory</button>
+                    </div>
+                    
+                    <div id="shopContent" class="shop-content">
+                        <div id="shopItems" class="shop-grid"></div>
+                        <div id="inventoryItems" class="shop-grid hidden"></div>
+                    </div>
+                </div>
+            </div>
+
             <!-- PROFILE TAB -->
             <div id="profile" class="tab-view" data-created-at="{{ user.created_at or '' }}" data-user-name="{{ user.name }}" data-user-email="{{ user.email }}" data-user-picture="{{ user.picture }}" data-user-decor="{{ user.avatar_decoration or '' }}" data-user-id="{{ user.id }}">
-                <div class="glass-card" style="text-align: center; padding: 32px;">
-                    <div class="avatar-wrap avatar-large" id="profileAvatarWrap" style="margin-bottom: 16px;">
+                <div class="glass-card" style="text-align: center; padding: 32px; position: relative;" id="profileCard">
+                    <div class="avatar-wrap avatar-large" id="profileAvatarWrap" style="margin-bottom: 16px; position: relative;">
+                        <div id="profileFrame" class="profile-frame"></div>
                         <img id="profileAvatar" src="{{ user.picture }}" style="width: 90px; height: 90px; border-radius: 50%; border: 3px solid var(--primary); box-shadow: 0 8px 24px var(--primary-glow); object-fit: cover;">
                         <img id="profileAvatarDecor" class="avatar-decor hidden" alt="">
                     </div>
+                    <div id="profileBadges" style="margin-bottom: 8px;"></div>
                     <div id="profileUserName" style="font-size: 24px; font-weight: 700; margin-bottom: 4px;">{{ user.name }}</div>
+                    <div id="profileTitle" class="profile-title"></div>
                     <div id="profileEmail" style="font-size: 14px; opacity: 0.6;">{{ user.email }}</div>
                     <div id="profileUserId" style="font-size: 12px; opacity: 0.5; margin-top: 4px;">ID: {{ user.id }}</div>
                     <div style="margin-top: 10px;">
@@ -4268,6 +4381,10 @@
             <button class="tab-btn" onclick="switchTab('comments', this)">
                 <span class="tab-icon">&#128172;</span>
                 <span class="tab-label">Chat</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('shop', this)">
+                <span class="tab-icon">&#128722;</span>
+                <span class="tab-label">Shop</span>
             </button>
             <button class="tab-btn" onclick="switchTab('profile', this)">
                 <span class="tab-icon">&#128100;</span>
@@ -5466,7 +5583,10 @@
             if (currentTab === 'library') loadLibrary();
             
             // Track daily challenge
-            if (data.liked) trackDailyAction('like');
+            if (data.liked) {
+                trackDailyAction('like');
+                awardXP(50, 'like');
+            }
         }
 
         async function toggleSave() {
@@ -5490,7 +5610,10 @@
             animateActionFeedback('saveIcon', data.saved ? '🔖' : '');
             
             // Track daily challenge
-            if (data.saved) trackDailyAction('save');
+            if (data.saved) {
+                trackDailyAction('save');
+                awardXP(50, 'save');
+            }
             if (settings.notifications) showToast(data.saved ? 'Verse saved' : 'Removed from saved');
             if (currentTab === 'library') loadLibrary();
         }
@@ -5996,6 +6119,7 @@
             loadProfileStats();
             if (settings.notifications) showToast('Comment posted!');
             trackDailyAction('comment');
+            awardXP(100, 'comment');
         }
 
         // Community Chat
@@ -6656,7 +6780,73 @@
             loadFavoriteBooks();
             loadVerseHistory();
             updateXpDisplay();
+            
+            // Load profile customizations from shop
+            loadProfileCustomization();
         }
+        
+        async function loadProfileCustomization() {
+            try {
+                const userId = document.getElementById('profile')?.dataset?.userId;
+                if (!userId) return;
+                
+                const res = await fetch(`/api/shop/profile/${userId}`);
+                if (!res.ok) return;
+                
+                const data = await res.json();
+                
+                // Apply frame
+                const frameEl = document.getElementById('profileFrame');
+                if (frameEl && data.frame) {
+                    const effects = data.frame.effects || {};
+                    frameEl.className = 'profile-frame';
+                    if (effects.frame_color === '#FFD700') frameEl.classList.add('gold');
+                    else if (effects.frame_color === '#C0C0C0') frameEl.classList.add('silver');
+                    else if (effects.frame_style === 'wings') frameEl.classList.add('angel');
+                }
+                
+                // Apply name color
+                const nameEl = document.getElementById('profileUserName');
+                if (nameEl && data.name_color) {
+                    const effects = data.name_color.effects || {};
+                    nameEl.className = '';
+                    if (effects.gradient) nameEl.classList.add('profile-name', 'rainbow');
+                    else if (effects.color === '#FFD700') nameEl.classList.add('profile-name', 'gold');
+                    else if (effects.color === '#39FF14') nameEl.classList.add('profile-name', 'neon');
+                    else if (effects.color) nameEl.style.color = effects.color;
+                }
+                
+                // Apply title
+                const titleEl = document.getElementById('profileTitle');
+                if (titleEl && data.title) {
+                    const effects = data.title.effects || {};
+                    titleEl.textContent = effects.title || '';
+                } else if (titleEl) {
+                    titleEl.textContent = '';
+                }
+                
+                // Apply badges
+                const badgesEl = document.getElementById('profileBadges');
+                if (badgesEl && data.badges && data.badges.length > 0) {
+                    badgesEl.innerHTML = data.badges.map(b => {
+                        const effects = b.effects || {};
+                        return `<span class="profile-badge" style="background: ${effects.color || 'var(--primary)'}" title="${b.name}">${b.icon}</span>`;
+                    }).join('');
+                } else if (badgesEl) {
+                    badgesEl.innerHTML = '';
+                }
+                
+                // Apply profile background
+                const profileCard = document.getElementById('profileCard');
+                if (profileCard && data.profile_bg) {
+                    const effects = data.profile_bg.effects || {};
+                    if (effects.bg_style === 'gradient' && effects.colors) {
+                        profileCard.style.background = `linear-gradient(135deg, ${effects.colors.join(', ')})`;
+                    }
+                }
+            } catch (e) {
+                console.error('Error loading profile customization:', e);
+            }
 
         const AVATAR_DECORATIONS = [
             { name: 'Halo', url: '/static/images/decorations/halo.svg' },
@@ -8995,6 +9185,236 @@ function loadAchievements(stats) {
                 document.querySelectorAll('.tab-view').forEach(el => el.classList.remove('desktop-active'));
             }
         });
+
+        // ===== SHOP SYSTEM =====
+        let shopItems = [];
+        let userInventory = [];
+        let userXP = { xp: 0, level: 1 };
+        let currentShopTab = 'shop';
+        let currentCategory = 'all';
+        
+        async function loadShopData() {
+            try {
+                // Load shop items
+                const itemsRes = await fetch('/api/shop/items');
+                const itemsData = await itemsRes.json();
+                if (itemsData.items) shopItems = itemsData.items;
+                
+                // Load user XP
+                const xpRes = await fetch('/api/shop/xp');
+                const xpData = await xpRes.json();
+                if (xpData.xp !== undefined) {
+                    userXP = xpData;
+                    updateShopXPDisplay();
+                }
+                
+                // Load inventory
+                await loadInventory();
+                
+                renderShopItems();
+            } catch (e) {
+                console.error('Error loading shop:', e);
+            }
+        }
+        
+        async function loadInventory() {
+            try {
+                const res = await fetch('/api/shop/inventory');
+                const data = await res.json();
+                if (data.inventory) userInventory = data.inventory;
+            } catch (e) {
+                console.error('Error loading inventory:', e);
+            }
+        }
+        
+        function updateShopXPDisplay() {
+            const xpEl = document.getElementById('shopXpAmount');
+            const levelEl = document.getElementById('shopLevel');
+            if (xpEl) xpEl.textContent = `${userXP.xp} XP`;
+            if (levelEl) levelEl.textContent = `Level ${userXP.level}`;
+        }
+        
+        function switchShopTab(tab) {
+            currentShopTab = tab;
+            document.querySelectorAll('.shop-tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.getElementById('shopItems').classList.toggle('hidden', tab !== 'shop');
+            document.getElementById('inventoryItems').classList.toggle('hidden', tab !== 'inventory');
+            
+            if (tab === 'shop') renderShopItems();
+            else renderInventory();
+        }
+        
+        function filterShop(category) {
+            currentCategory = category;
+            document.querySelectorAll('.shop-category-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            renderShopItems();
+        }
+        
+        function renderShopItems() {
+            const container = document.getElementById('shopItems');
+            let items = shopItems;
+            
+            if (currentCategory !== 'all') {
+                items = items.filter(item => item.category === currentCategory);
+            }
+            
+            if (items.length === 0) {
+                container.innerHTML = `
+                    <div class="shop-empty">
+                        <div class="shop-empty-icon">📭</div>
+                        <p>No items found in this category</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = items.map(item => {
+                const owned = userInventory.find(i => i.item_id === item.item_id);
+                const rarityClass = item.rarity || 'common';
+                
+                return `
+                    <div class="shop-item ${rarityClass} ${owned ? 'owned' : ''}" data-item-id="${item.item_id}">
+                        <span class="shop-item-icon">${item.icon || '📦'}</span>
+                        <div class="shop-item-name">${item.name}</div>
+                        <div class="shop-item-desc">${item.description}</div>
+                        <span class="shop-item-rarity ${rarityClass}">${item.rarity}</span>
+                        <div class="shop-item-price ${owned ? 'owned' : ''}">
+                            ${owned ? '✓ Owned' : `⚡ ${item.price} XP`}
+                        </div>
+                        <button class="shop-item-btn" ${owned ? 'disabled' : ''} onclick="purchaseItem('${item.item_id}', ${item.price})">
+                            ${owned ? 'Owned' : 'Buy'}
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function renderInventory() {
+            const container = document.getElementById('inventoryItems');
+            
+            if (userInventory.length === 0) {
+                container.innerHTML = `
+                    <div class="shop-empty">
+                        <div class="shop-empty-icon">🎒</div>
+                        <p>Your inventory is empty</p>
+                        <p style="font-size: 13px; margin-top: 8px;">Visit the shop to buy items!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = userInventory.map(item => {
+                const rarityClass = item.rarity || 'common';
+                const isEquipped = item.equipped;
+                
+                return `
+                    <div class="shop-item ${rarityClass} ${isEquipped ? 'equipped' : ''}" data-item-id="${item.item_id}">
+                        <span class="shop-item-icon">${item.icon || '📦'}</span>
+                        <div class="shop-item-name">${item.name}</div>
+                        <div class="shop-item-desc">${item.description}</div>
+                        <span class="shop-item-rarity ${rarityClass}">${item.rarity}</span>
+                        <div class="shop-item-price owned">${isEquipped ? '✓ Equipped' : 'Owned'}</div>
+                        <button class="shop-item-btn ${isEquipped ? 'unequip' : 'equip'}" onclick="toggleEquipItem('${item.item_id}', ${!isEquipped})">
+                            ${isEquipped ? 'Unequip' : 'Equip'}
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        async function purchaseItem(itemId, price) {
+            if (userXP.xp < price) {
+                showToast('❌ Not enough XP!');
+                return;
+            }
+            
+            try {
+                const res = await fetch('/api/shop/purchase', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ item_id: itemId })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    userXP.xp = data.remaining_xp;
+                    updateShopXPDisplay();
+                    await loadInventory();
+                    renderShopItems();
+                    showToast(`✅ Purchased ${data.name}!`);
+                    AudioSys.playSuccess();
+                } else {
+                    showToast(`❌ ${data.error || 'Purchase failed'}`);
+                }
+            } catch (e) {
+                console.error('Purchase error:', e);
+                showToast('❌ Purchase failed');
+            }
+        }
+        
+        async function toggleEquipItem(itemId, equip) {
+            try {
+                const res = await fetch('/api/shop/equip', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ item_id: itemId, equip: equip })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    await loadInventory();
+                    renderInventory();
+                    showToast(equip ? '✅ Item equipped!' : 'Item unequipped');
+                } else {
+                    showToast(`❌ ${data.error || 'Failed'}`);
+                }
+            } catch (e) {
+                console.error('Equip error:', e);
+            }
+        }
+        
+        // Load shop data when shop tab is opened
+        const originalSwitchTab = switchTab;
+        switchTab = function(tab, btn = null) {
+            originalSwitchTab(tab, btn);
+            if (tab === 'shop') {
+                loadShopData();
+            }
+        };
+        
+        // Award XP for actions
+        async function awardXP(amount, action) {
+            try {
+                const res = await fetch('/api/xp/award', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount: amount, action: action })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    // Update local XP display if on shop tab
+                    userXP.xp = data.new_total;
+                    userXP.level = data.level;
+                    updateShopXPDisplay();
+                    
+                    if (data.leveled_up) {
+                        showToast(`🎉 Level Up! You're now level ${data.level}!`);
+                        AudioSys.playSuccess();
+                    }
+                    
+                    return data;
+                }
+            } catch (e) {
+                console.error('Award XP error:', e);
+            }
+        }
 
         // Start
         init();

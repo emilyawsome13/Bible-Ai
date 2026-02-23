@@ -500,6 +500,54 @@ def init_db():
                     total_logins INTEGER DEFAULT 1
                 )
             ''')
+            
+            # Shop and XP system tables
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS user_xp (
+                    user_id INTEGER PRIMARY KEY,
+                    xp INTEGER DEFAULT 0,
+                    total_xp_earned INTEGER DEFAULT 0,
+                    level INTEGER DEFAULT 1,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS shop_items (
+                    id SERIAL PRIMARY KEY,
+                    item_id TEXT UNIQUE NOT NULL,
+                    name TEXT NOT NULL,
+                    description TEXT,
+                    category TEXT NOT NULL,
+                    price INTEGER NOT NULL,
+                    rarity TEXT DEFAULT 'common',
+                    effects JSONB,
+                    icon TEXT,
+                    available BOOLEAN DEFAULT TRUE
+                )
+            ''')
+            
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS user_inventory (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL,
+                    item_id TEXT NOT NULL,
+                    purchased_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    equipped BOOLEAN DEFAULT FALSE,
+                    UNIQUE(user_id, item_id)
+                )
+            ''')
+            
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS xp_transactions (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL,
+                    amount INTEGER NOT NULL,
+                    type TEXT NOT NULL,
+                    description TEXT,
+                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
         else:
             # SQLite tables
             c.execute('''CREATE TABLE IF NOT EXISTS verses 
@@ -589,6 +637,54 @@ def init_db():
                     last_login_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     signup_ip TEXT,
                     total_logins INTEGER DEFAULT 1
+                )
+            ''')
+            
+            # Shop and XP system tables
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS user_xp (
+                    user_id INTEGER PRIMARY KEY,
+                    xp INTEGER DEFAULT 0,
+                    total_xp_earned INTEGER DEFAULT 0,
+                    level INTEGER DEFAULT 1,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS shop_items (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    item_id TEXT UNIQUE NOT NULL,
+                    name TEXT NOT NULL,
+                    description TEXT,
+                    category TEXT NOT NULL,
+                    price INTEGER NOT NULL,
+                    rarity TEXT DEFAULT 'common',
+                    effects TEXT,
+                    icon TEXT,
+                    available BOOLEAN DEFAULT 1
+                )
+            ''')
+            
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS user_inventory (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    item_id TEXT NOT NULL,
+                    purchased_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    equipped INTEGER DEFAULT 0,
+                    UNIQUE(user_id, item_id)
+                )
+            ''')
+            
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS xp_transactions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    amount INTEGER NOT NULL,
+                    type TEXT NOT NULL,
+                    description TEXT,
+                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
         
@@ -926,6 +1022,106 @@ def migrate_db():
                     logger.info("Added ip_address column to bans table")
                 except Exception as e:
                     logger.warning(f"Could not add ip_address to bans: {e}")
+        
+        # Migrate shop and XP tables (Postgres)
+        if db_type == 'postgres':
+            try:
+                c.execute('''
+                    CREATE TABLE IF NOT EXISTS user_xp (
+                        user_id INTEGER PRIMARY KEY,
+                        xp INTEGER DEFAULT 0,
+                        total_xp_earned INTEGER DEFAULT 0,
+                        level INTEGER DEFAULT 1,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                ''')
+                c.execute('''
+                    CREATE TABLE IF NOT EXISTS shop_items (
+                        id SERIAL PRIMARY KEY,
+                        item_id TEXT UNIQUE NOT NULL,
+                        name TEXT NOT NULL,
+                        description TEXT,
+                        category TEXT NOT NULL,
+                        price INTEGER NOT NULL,
+                        rarity TEXT DEFAULT 'common',
+                        effects JSONB,
+                        icon TEXT,
+                        available BOOLEAN DEFAULT TRUE
+                    )
+                ''')
+                c.execute('''
+                    CREATE TABLE IF NOT EXISTS user_inventory (
+                        id SERIAL PRIMARY KEY,
+                        user_id INTEGER NOT NULL,
+                        item_id TEXT NOT NULL,
+                        purchased_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        equipped BOOLEAN DEFAULT FALSE,
+                        UNIQUE(user_id, item_id)
+                    )
+                ''')
+                c.execute('''
+                    CREATE TABLE IF NOT EXISTS xp_transactions (
+                        id SERIAL PRIMARY KEY,
+                        user_id INTEGER NOT NULL,
+                        amount INTEGER NOT NULL,
+                        type TEXT NOT NULL,
+                        description TEXT,
+                        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                ''')
+                logger.info("Created shop and XP tables")
+            except Exception as e:
+                logger.warning(f"Shop tables may already exist: {e}")
+        
+        # Migrate shop and XP tables (SQLite)
+        if db_type != 'postgres':
+            try:
+                c.execute('''
+                    CREATE TABLE IF NOT EXISTS user_xp (
+                        user_id INTEGER PRIMARY KEY,
+                        xp INTEGER DEFAULT 0,
+                        total_xp_earned INTEGER DEFAULT 0,
+                        level INTEGER DEFAULT 1,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                ''')
+                c.execute('''
+                    CREATE TABLE IF NOT EXISTS shop_items (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        item_id TEXT UNIQUE NOT NULL,
+                        name TEXT NOT NULL,
+                        description TEXT,
+                        category TEXT NOT NULL,
+                        price INTEGER NOT NULL,
+                        rarity TEXT DEFAULT 'common',
+                        effects TEXT,
+                        icon TEXT,
+                        available INTEGER DEFAULT 1
+                    )
+                ''')
+                c.execute('''
+                    CREATE TABLE IF NOT EXISTS user_inventory (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id INTEGER NOT NULL,
+                        item_id TEXT NOT NULL,
+                        purchased_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        equipped INTEGER DEFAULT 0,
+                        UNIQUE(user_id, item_id)
+                    )
+                ''')
+                c.execute('''
+                    CREATE TABLE IF NOT EXISTS xp_transactions (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id INTEGER NOT NULL,
+                        amount INTEGER NOT NULL,
+                        type TEXT NOT NULL,
+                        description TEXT,
+                        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                ''')
+                logger.info("Created shop and XP tables")
+            except Exception as e:
+                logger.warning(f"Shop tables may already exist: {e}")
         
         conn.commit()
         logger.info("Database migrations completed")
@@ -3179,6 +3375,554 @@ def verify_role_code():
             return jsonify({"success": False, "error": str(e)})
         finally:
             conn.close()
+
+# ========== SHOP & XP SYSTEM ==========
+
+DEFAULT_SHOP_ITEMS = [
+    # Avatar Frames
+    {"item_id": "frame_gold", "name": "Golden Halo", "description": "A radiant golden frame for your avatar", "category": "frame", "price": 5000, "rarity": "legendary", "icon": "👑", "effects": {"frame_color": "#FFD700", "glow": True}},
+    {"item_id": "frame_silver", "name": "Silver Crown", "description": "An elegant silver frame", "category": "frame", "price": 3000, "rarity": "epic", "icon": "🥈", "effects": {"frame_color": "#C0C0C0", "glow": True}},
+    {"item_id": "frame_bronze", "name": "Bronze Ring", "description": "A warm bronze frame", "category": "frame", "price": 1500, "rarity": "rare", "icon": "🥉", "effects": {"frame_color": "#CD7F32", "glow": False}},
+    {"item_id": "frame_angel", "name": "Angel Wings", "description": "Beautiful angel wings frame", "category": "frame", "price": 8000, "rarity": "legendary", "icon": "🪽", "effects": {"frame_style": "wings", "animation": "float"}},
+    {"item_id": "frame_cross", "name": "Holy Cross", "description": "A blessed cross frame", "category": "frame", "price": 2500, "rarity": "rare", "icon": "✝️", "effects": {"frame_style": "cross", "glow": True}},
+    {"item_id": "frame_heart", "name": "Love Heart", "description": "A loving heart frame", "category": "frame", "price": 2000, "rarity": "rare", "icon": "💖", "effects": {"frame_style": "heart", "animation": "pulse"}},
+    {"item_id": "frame_fire", "name": "Flame Border", "description": "Burning with passion", "category": "frame", "price": 4500, "rarity": "epic", "icon": "🔥", "effects": {"frame_style": "fire", "animation": "flicker"}},
+    {"item_id": "frame_ice", "name": "Frost Edge", "description": "Cool and crystalline", "category": "frame", "price": 4500, "rarity": "epic", "icon": "❄️", "effects": {"frame_color": "#00CED1", "glow": True}},
+    {"item_id": "frame_nature", "name": "Nature's Embrace", "description": "Wrapped in leaves and vines", "category": "frame", "price": 3500, "rarity": "epic", "icon": "🌿", "effects": {"frame_style": "nature", "animation": "sway"}},
+    {"item_id": "frame_stars", "name": "Starry Night", "description": "Sparkling with cosmic energy", "category": "frame", "price": 6000, "rarity": "legendary", "icon": "✨", "effects": {"frame_style": "stars", "animation": "twinkle"}},
+    
+    # Name Colors
+    {"item_id": "color_gold", "name": "Golden Name", "description": "Shine with golden text", "category": "name_color", "price": 3000, "rarity": "legendary", "icon": "🌟", "effects": {"color": "#FFD700", "gradient": False}},
+    {"item_id": "color_rainbow", "name": "Rainbow Name", "description": "Cycle through all colors", "category": "name_color", "price": 5000, "rarity": "legendary", "icon": "🌈", "effects": {"gradient": True, "colors": ["#FF0000", "#FF7F00", "#FFFF00", "#00FF00", "#0000FF", "#4B0082", "#9400D3"]}},
+    {"item_id": "color_blue", "name": "Ocean Blue", "description": "Deep sea blue name", "category": "name_color", "price": 1000, "rarity": "common", "icon": "🔵", "effects": {"color": "#0A84FF", "glow": True}},
+    {"item_id": "color_red", "name": "Ruby Red", "description": "Passionate red name", "category": "name_color", "price": 1000, "rarity": "common", "icon": "🔴", "effects": {"color": "#FF375F", "glow": True}},
+    {"item_id": "color_purple", "name": "Royal Purple", "description": "Majestic purple name", "category": "name_color", "price": 1500, "rarity": "rare", "icon": "🟣", "effects": {"color": "#BF5AF2", "glow": True}},
+    {"item_id": "color_green", "name": "Emerald Green", "description": "Rich emerald name", "category": "name_color", "price": 1500, "rarity": "rare", "icon": "🟢", "effects": {"color": "#30D158", "glow": True}},
+    {"item_id": "color_neon", "name": "Neon Glow", "description": "Electric neon effect", "category": "name_color", "price": 4000, "rarity": "epic", "icon": "⚡", "effects": {"color": "#39FF14", "glow": True, "animation": "pulse"}},
+    {"item_id": "color_pink", "name": "Pretty Pink", "description": "Sweet pink name", "category": "name_color", "price": 1200, "rarity": "common", "icon": "🩷", "effects": {"color": "#FF69B4", "glow": False}},
+    
+    # Titles
+    {"item_id": "title_scholar", "name": "Bible Scholar", "description": "Show your dedication to study", "category": "title", "price": 2500, "rarity": "rare", "icon": "📖", "effects": {"title": "Bible Scholar", "prefix": True}},
+    {"item_id": "title_warrior", "name": "Prayer Warrior", "description": "A warrior in prayer", "category": "title", "price": 2500, "rarity": "rare", "icon": "⚔️", "effects": {"title": "Prayer Warrior", "prefix": True}},
+    {"item_id": "title_saint", "name": "Saint", "description": "Recognized for righteousness", "category": "title", "price": 10000, "rarity": "legendary", "icon": "😇", "effects": {"title": "Saint", "prefix": True, "glow": True}},
+    {"item_id": "title_prophet", "name": "Prophet", "description": "Speaker of truth", "category": "title", "price": 8000, "rarity": "legendary", "icon": "🔮", "effects": {"title": "Prophet", "prefix": True}},
+    {"item_id": "title_disciple", "name": "Disciple", "description": "A devoted follower", "category": "title", "price": 1500, "rarity": "common", "icon": "🙏", "effects": {"title": "Disciple", "prefix": True}},
+    {"item_id": "title_apostle", "name": "Apostle", "description": "One who is sent forth", "category": "title", "price": 7500, "rarity": "legendary", "icon": "📜", "effects": {"title": "Apostle", "prefix": True}},
+    {"item_id": "title_pastor", "name": "Pastor", "description": "Shepherd of the flock", "category": "title", "price": 3500, "rarity": "epic", "icon": "🐑", "effects": {"title": "Pastor", "prefix": True}},
+    {"item_id": "title_evangelist", "name": "Evangelist", "description": "Bearer of good news", "category": "title", "price": 4000, "rarity": "epic", "icon": "📢", "effects": {"title": "Evangelist", "prefix": True}},
+    {"item_id": "title_worshiper", "name": "Worshiper", "description": "Heart of worship", "category": "title", "price": 2000, "rarity": "rare", "icon": "🎵", "effects": {"title": "Worshiper", "prefix": True}},
+    {"item_id": "title_messenger", "name": "Messenger", "description": "Carrier of the Word", "category": "title", "price": 1800, "rarity": "common", "icon": "✉️", "effects": {"title": "Messenger", "prefix": True}},
+    
+    # Badges (displayed next to name)
+    {"item_id": "badge_verified", "name": "Verified", "description": "A verified member", "category": "badge", "price": 500, "rarity": "common", "icon": "✓", "effects": {"badge": "verified", "color": "#0A84FF"}},
+    {"item_id": "badge_star", "name": "Star Member", "description": "Shining star of the community", "category": "badge", "price": 2000, "rarity": "rare", "icon": "⭐", "effects": {"badge": "star", "color": "#FFD700"}},
+    {"item_id": "badge_heart", "name": "Loved", "description": "Spreading love", "category": "badge", "price": 1500, "rarity": "rare", "icon": "💝", "effects": {"badge": "heart", "color": "#FF375F"}},
+    {"item_id": "badge_dove", "name": "Peace Dove", "description": "Bringer of peace", "category": "badge", "price": 2500, "rarity": "epic", "icon": "🕊️", "effects": {"badge": "dove", "color": "#FFFFFF"}},
+    {"item_id": "badge_crown", "name": "Crowned", "description": "Royal recognition", "category": "badge", "price": 5000, "rarity": "legendary", "icon": "👑", "effects": {"badge": "crown", "color": "#FFD700"}},
+    {"item_id": "badge_cross", "name": "Faithful", "description": "Steadfast in faith", "category": "badge", "price": 1200, "rarity": "common", "icon": "✝️", "effects": {"badge": "cross", "color": "#8B4513"}},
+    {"item_id": "badge_bible", "name": "Scripture Master", "description": "Knows the Word", "category": "badge", "price": 3500, "rarity": "epic", "icon": "📖", "effects": {"badge": "bible", "color": "#30D158"}},
+    {"item_id": "badge_prayer", "name": "Prayer Warrior", "description": "Warrior in prayer", "category": "badge", "price": 2200, "rarity": "rare", "icon": "🙏", "effects": {"badge": "prayer", "color": "#BF5AF2"}},
+    
+    # Chat Effects
+    {"item_id": "chat_sparkle", "name": "Sparkle Messages", "description": "Your messages sparkle", "category": "chat_effect", "price": 3000, "rarity": "epic", "icon": "✨", "effects": {"effect": "sparkle", "animation": "twinkle"}},
+    {"item_id": "chat_rainbow", "name": "Rainbow Text", "description": "Colorful message text", "category": "chat_effect", "price": 4000, "rarity": "legendary", "icon": "🌈", "effects": {"effect": "rainbow", "gradient": True}},
+    {"item_id": "chat_glow", "name": "Glowing Messages", "description": "Your messages glow", "category": "chat_effect", "price": 2500, "rarity": "rare", "icon": "💫", "effects": {"effect": "glow", "color": "#FFD700"}},
+    {"item_id": "chat_fire", "name": "Fire Messages", "description": "Burning passion in every message", "category": "chat_effect", "price": 3500, "rarity": "epic", "icon": "🔥", "effects": {"effect": "fire", "animation": "flicker"}},
+    
+    # Profile Backgrounds
+    {"item_id": "bg_golden", "name": "Golden Hour", "description": "Warm golden background", "category": "profile_bg", "price": 2000, "rarity": "rare", "icon": "🌅", "effects": {"bg_style": "gradient", "colors": ["#FFD700", "#FFA500"]}},
+    {"item_id": "bg_night", "name": "Starry Night", "description": "Beautiful night sky", "category": "profile_bg", "price": 2500, "rarity": "epic", "icon": "🌌", "effects": {"bg_style": "stars", "animation": "twinkle"}},
+    {"item_id": "bg_clouds", "name": "Heavenly Clouds", "description": "Walk on clouds", "category": "profile_bg", "price": 3000, "rarity": "epic", "icon": "☁️", "effects": {"bg_style": "clouds", "animation": "float"}},
+    {"item_id": "bg_nature", "name": "Garden of Eden", "description": "Lush paradise", "category": "profile_bg", "price": 2200, "rarity": "rare", "icon": "🌳", "effects": {"bg_style": "nature", "colors": ["#228B22", "#90EE90"]}},
+    {"item_id": "bg_ocean", "name": "Ocean Waves", "description": "Calming ocean vibes", "category": "profile_bg", "price": 2000, "rarity": "rare", "icon": "🌊", "effects": {"bg_style": "waves", "animation": "flow"}},
+    {"item_id": "bg_fire", "name": "Holy Fire", "description": "Divine flames", "category": "profile_bg", "price": 3500, "rarity": "epic", "icon": "🔥", "effects": {"bg_style": "fire", "animation": "flicker"}},
+    
+    # Special Abilities
+    {"item_id": "ability_double_xp", "name": "Double XP Boost", "description": "2x XP for 24 hours", "category": "consumable", "price": 1500, "rarity": "epic", "icon": "⚡", "effects": {"boost": "double_xp", "duration": "24h", "multiplier": 2}},
+    {"item_id": "ability_triple_xp", "name": "Triple XP Boost", "description": "3x XP for 6 hours", "category": "consumable", "price": 2500, "rarity": "legendary", "icon": "🚀", "effects": {"boost": "triple_xp", "duration": "6h", "multiplier": 3}},
+]
+
+def init_shop_items():
+    """Initialize default shop items if they don't exist"""
+    conn, db_type = get_db()
+    c = get_cursor(conn, db_type)
+    
+    try:
+        for item in DEFAULT_SHOP_ITEMS:
+            effects_json = json.dumps(item['effects']) if db_type == 'postgres' else json.dumps(item['effects'])
+            
+            if db_type == 'postgres':
+                c.execute("""
+                    INSERT INTO shop_items (item_id, name, description, category, price, rarity, icon, effects, available)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, TRUE)
+                    ON CONFLICT (item_id) DO NOTHING
+                """, (item['item_id'], item['name'], item['description'], item['category'], 
+                      item['price'], item['rarity'], item['icon'], effects_json))
+            else:
+                c.execute("""
+                    INSERT OR IGNORE INTO shop_items (item_id, name, description, category, price, rarity, icon, effects, available)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+                """, (item['item_id'], item['name'], item['description'], item['category'],
+                      item['price'], item['rarity'], item['icon'], effects_json))
+        
+        conn.commit()
+        logger.info("Shop items initialized")
+    except Exception as e:
+        logger.error(f"Error initializing shop items: {e}")
+    finally:
+        conn.close()
+
+# Initialize shop items on startup
+init_shop_items()
+
+@app.route('/api/shop/items')
+def get_shop_items():
+    """Get all available shop items"""
+    if 'user_id' not in session:
+        return jsonify({"error": "Not logged in"}), 401
+    
+    category = request.args.get('category', 'all')
+    
+    conn, db_type = get_db()
+    c = get_cursor(conn, db_type)
+    
+    try:
+        if category == 'all':
+            if db_type == 'postgres':
+                c.execute("""
+                    SELECT item_id, name, description, category, price, rarity, icon, effects 
+                    FROM shop_items WHERE available = TRUE ORDER BY category, price
+                """)
+            else:
+                c.execute("""
+                    SELECT item_id, name, description, category, price, rarity, icon, effects 
+                    FROM shop_items WHERE available = 1 ORDER BY category, price
+                """)
+        else:
+            if db_type == 'postgres':
+                c.execute("""
+                    SELECT item_id, name, description, category, price, rarity, icon, effects 
+                    FROM shop_items WHERE category = %s AND available = TRUE ORDER BY price
+                """, (category,))
+            else:
+                c.execute("""
+                    SELECT item_id, name, description, category, price, rarity, icon, effects 
+                    FROM shop_items WHERE category = ? AND available = 1 ORDER BY price
+                """, (category,))
+        
+        items = []
+        for row in c.fetchall():
+            effects = row['effects'] if isinstance(row['effects'], dict) else json.loads(row['effects'] or '{}')
+            items.append({
+                "item_id": row['item_id'] if hasattr(row, 'keys') else row[0],
+                "name": row['name'] if hasattr(row, 'keys') else row[1],
+                "description": row['description'] if hasattr(row, 'keys') else row[2],
+                "category": row['category'] if hasattr(row, 'keys') else row[3],
+                "price": row['price'] if hasattr(row, 'keys') else row[4],
+                "rarity": row['rarity'] if hasattr(row, 'keys') else row[5],
+                "icon": row['icon'] if hasattr(row, 'keys') else row[6],
+                "effects": effects
+            })
+        
+        return jsonify({"items": items})
+    except Exception as e:
+        logger.error(f"Error getting shop items: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/shop/xp')
+def get_user_xp():
+    """Get user's XP and level"""
+    if 'user_id' not in session:
+        return jsonify({"error": "Not logged in"}), 401
+    
+    conn, db_type = get_db()
+    c = get_cursor(conn, db_type)
+    
+    try:
+        # Get or create user XP record
+        if db_type == 'postgres':
+            c.execute("""
+                INSERT INTO user_xp (user_id, xp, total_xp_earned, level)
+                VALUES (%s, 0, 0, 1)
+                ON CONFLICT (user_id) DO NOTHING
+            """, (session['user_id'],))
+            c.execute("SELECT xp, total_xp_earned, level FROM user_xp WHERE user_id = %s", (session['user_id'],))
+        else:
+            c.execute("""
+                INSERT OR IGNORE INTO user_xp (user_id, xp, total_xp_earned, level)
+                VALUES (?, 0, 0, 1)
+            """, (session['user_id'],))
+            c.execute("SELECT xp, total_xp_earned, level FROM user_xp WHERE user_id = ?", (session['user_id'],))
+        
+        row = c.fetchone()
+        conn.commit()
+        
+        if row:
+            xp = row['xp'] if hasattr(row, 'keys') else row[0]
+            total_earned = row['total_xp_earned'] if hasattr(row, 'keys') else row[1]
+            level = row['level'] if hasattr(row, 'keys') else row[2]
+        else:
+            xp = total_earned = 0
+            level = 1
+        
+        return jsonify({
+            "xp": xp,
+            "total_xp_earned": total_earned,
+            "level": level,
+            "next_level_xp": level * 1000
+        })
+    except Exception as e:
+        logger.error(f"Error getting user XP: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/shop/purchase', methods=['POST'])
+def purchase_item():
+    """Purchase an item from the shop"""
+    if 'user_id' not in session:
+        return jsonify({"error": "Not logged in"}), 401
+    
+    data = request.get_json()
+    item_id = data.get('item_id')
+    
+    if not item_id:
+        return jsonify({"error": "Item ID required"}), 400
+    
+    conn, db_type = get_db()
+    c = get_cursor(conn, db_type)
+    
+    try:
+        # Get item details
+        if db_type == 'postgres':
+            c.execute("SELECT price, name, category FROM shop_items WHERE item_id = %s AND available = TRUE", (item_id,))
+        else:
+            c.execute("SELECT price, name, category FROM shop_items WHERE item_id = ? AND available = 1", (item_id,))
+        
+        item = c.fetchone()
+        if not item:
+            return jsonify({"error": "Item not found"}), 404
+        
+        price = item['price'] if hasattr(item, 'keys') else item[0]
+        item_name = item['name'] if hasattr(item, 'keys') else item[1]
+        category = item['category'] if hasattr(item, 'keys') else item[2]
+        
+        # Check if user already owns this item (unless it's consumable)
+        if category != 'consumable':
+            if db_type == 'postgres':
+                c.execute("SELECT 1 FROM user_inventory WHERE user_id = %s AND item_id = %s", (session['user_id'], item_id))
+            else:
+                c.execute("SELECT 1 FROM user_inventory WHERE user_id = ? AND item_id = ?", (session['user_id'], item_id))
+            
+            if c.fetchone():
+                return jsonify({"error": "You already own this item"}), 400
+        
+        # Get user's XP
+        if db_type == 'postgres':
+            c.execute("SELECT xp FROM user_xp WHERE user_id = %s", (session['user_id'],))
+        else:
+            c.execute("SELECT xp FROM user_xp WHERE user_id = ?", (session['user_id'],))
+        
+        row = c.fetchone()
+        current_xp = row['xp'] if (row and hasattr(row, 'keys')) else (row[0] if row else 0)
+        
+        if current_xp < price:
+            return jsonify({"error": "Not enough XP", "needed": price - current_xp}), 400
+        
+        # Deduct XP
+        new_xp = current_xp - price
+        if db_type == 'postgres':
+            c.execute("""
+                INSERT INTO user_xp (user_id, xp, total_xp_earned, level)
+                VALUES (%s, %s, 0, 1)
+                ON CONFLICT (user_id) DO UPDATE SET xp = EXCLUDED.xp
+            """, (session['user_id'], new_xp))
+            
+            # Add to inventory
+            c.execute("""
+                INSERT INTO user_inventory (user_id, item_id, equipped)
+                VALUES (%s, %s, FALSE)
+            """, (session['user_id'], item_id))
+            
+            # Log transaction
+            c.execute("""
+                INSERT INTO xp_transactions (user_id, amount, type, description)
+                VALUES (%s, %s, 'purchase', %s)
+            """, (session['user_id'], -price, f"Purchased {item_name}"))
+        else:
+            c.execute("""
+                INSERT OR REPLACE INTO user_xp (user_id, xp, total_xp_earned, level)
+                VALUES (?, ?, COALESCE((SELECT total_xp_earned FROM user_xp WHERE user_id = ?), 0), 
+                        COALESCE((SELECT level FROM user_xp WHERE user_id = ?), 1))
+            """, (session['user_id'], new_xp, session['user_id'], session['user_id']))
+            
+            c.execute("""
+                INSERT INTO user_inventory (user_id, item_id, equipped)
+                VALUES (?, ?, 0)
+            """, (session['user_id'], item_id))
+            
+            c.execute("""
+                INSERT INTO xp_transactions (user_id, amount, type, description)
+                VALUES (?, ?, 'purchase', ?)
+            """, (session['user_id'], -price, f"Purchased {item_name}"))
+        
+        conn.commit()
+        
+        return jsonify({
+            "success": True,
+            "item_id": item_id,
+            "name": item_name,
+            "remaining_xp": new_xp
+        })
+    except Exception as e:
+        logger.error(f"Error purchasing item: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/shop/inventory')
+def get_user_inventory():
+    """Get user's purchased items"""
+    if 'user_id' not in session:
+        return jsonify({"error": "Not logged in"}), 401
+    
+    conn, db_type = get_db()
+    c = get_cursor(conn, db_type)
+    
+    try:
+        if db_type == 'postgres':
+            c.execute("""
+                SELECT i.item_id, i.equipped, s.name, s.description, s.category, s.rarity, s.icon, s.effects
+                FROM user_inventory i
+                JOIN shop_items s ON i.item_id = s.item_id
+                WHERE i.user_id = %s
+                ORDER BY s.category, s.price
+            """, (session['user_id'],))
+        else:
+            c.execute("""
+                SELECT i.item_id, i.equipped, s.name, s.description, s.category, s.rarity, s.icon, s.effects
+                FROM user_inventory i
+                JOIN shop_items s ON i.item_id = s.item_id
+                WHERE i.user_id = ?
+                ORDER BY s.category, s.price
+            """, (session['user_id'],))
+        
+        items = []
+        for row in c.fetchall():
+            effects = row['effects'] if isinstance(row['effects'], dict) else json.loads(row['effects'] or '{}')
+            items.append({
+                "item_id": row['item_id'] if hasattr(row, 'keys') else row[0],
+                "equipped": bool(row['equipped'] if hasattr(row, 'keys') else row[1]),
+                "name": row['name'] if hasattr(row, 'keys') else row[2],
+                "description": row['description'] if hasattr(row, 'keys') else row[3],
+                "category": row['category'] if hasattr(row, 'keys') else row[4],
+                "rarity": row['rarity'] if hasattr(row, 'keys') else row[5],
+                "icon": row['icon'] if hasattr(row, 'keys') else row[6],
+                "effects": effects
+            })
+        
+        return jsonify({"inventory": items})
+    except Exception as e:
+        logger.error(f"Error getting inventory: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/shop/equip', methods=['POST'])
+def equip_item():
+    """Equip or unequip an item"""
+    if 'user_id' not in session:
+        return jsonify({"error": "Not logged in"}), 401
+    
+    data = request.get_json()
+    item_id = data.get('item_id')
+    equip = data.get('equip', True)
+    
+    if not item_id:
+        return jsonify({"error": "Item ID required"}), 400
+    
+    conn, db_type = get_db()
+    c = get_cursor(conn, db_type)
+    
+    try:
+        # Verify user owns this item
+        if db_type == 'postgres':
+            c.execute("SELECT category FROM user_inventory ui JOIN shop_items s ON ui.item_id = s.item_id WHERE ui.user_id = %s AND ui.item_id = %s", 
+                      (session['user_id'], item_id))
+        else:
+            c.execute("SELECT category FROM user_inventory ui JOIN shop_items s ON ui.item_id = s.item_id WHERE ui.user_id = ? AND ui.item_id = ?", 
+                      (session['user_id'], item_id))
+        
+        row = c.fetchone()
+        if not row:
+            return jsonify({"error": "Item not in inventory"}), 404
+        
+        category = row['category'] if hasattr(row, 'keys') else row[0]
+        
+        # If equipping, unequip other items in same category (except badges which can stack)
+        if equip and category not in ['badge', 'consumable']:
+            if db_type == 'postgres':
+                c.execute("""
+                    UPDATE user_inventory SET equipped = FALSE
+                    WHERE user_id = %s AND item_id IN (
+                        SELECT item_id FROM shop_items WHERE category = %s
+                    )
+                """, (session['user_id'], category))
+            else:
+                c.execute("""
+                    UPDATE user_inventory SET equipped = 0
+                    WHERE user_id = ? AND item_id IN (
+                        SELECT item_id FROM shop_items WHERE category = ?
+                    )
+                """, (session['user_id'], category))
+        
+        # Equip/unequip the item
+        if db_type == 'postgres':
+            c.execute("UPDATE user_inventory SET equipped = %s WHERE user_id = %s AND item_id = %s",
+                      (equip, session['user_id'], item_id))
+        else:
+            c.execute("UPDATE user_inventory SET equipped = ? WHERE user_id = ? AND item_id = ?",
+                      (1 if equip else 0, session['user_id'], item_id))
+        
+        conn.commit()
+        
+        return jsonify({"success": True, "equipped": equip, "item_id": item_id})
+    except Exception as e:
+        logger.error(f"Error equipping item: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/shop/profile/<int:user_id>')
+def get_user_profile_customization(user_id):
+    """Get a user's equipped profile customizations (public)"""
+    conn, db_type = get_db()
+    c = get_cursor(conn, db_type)
+    
+    try:
+        if db_type == 'postgres':
+            c.execute("""
+                SELECT s.item_id, s.category, s.effects, s.name, s.icon
+                FROM user_inventory i
+                JOIN shop_items s ON i.item_id = s.item_id
+                WHERE i.user_id = %s AND i.equipped = TRUE
+            """, (user_id,))
+        else:
+            c.execute("""
+                SELECT s.item_id, s.category, s.effects, s.name, s.icon
+                FROM user_inventory i
+                JOIN shop_items s ON i.item_id = s.item_id
+                WHERE i.user_id = ? AND i.equipped = 1
+            """, (user_id,))
+        
+        customizations = {
+            "frame": None,
+            "name_color": None,
+            "title": None,
+            "badges": [],
+            "chat_effect": None,
+            "profile_bg": None
+        }
+        
+        for row in c.fetchall():
+            category = row['category'] if hasattr(row, 'keys') else row[1]
+            effects = row['effects'] if isinstance(row['effects'], dict) else json.loads(row['effects'] or '{}')
+            item_data = {
+                "item_id": row['item_id'] if hasattr(row, 'keys') else row[0],
+                "name": row['name'] if hasattr(row, 'keys') else row[3],
+                "icon": row['icon'] if hasattr(row, 'keys') else row[4],
+                "effects": effects
+            }
+            
+            if category == 'badge':
+                customizations['badges'].append(item_data)
+            elif category in customizations:
+                customizations[category] = item_data
+        
+        return jsonify(customizations)
+    except Exception as e:
+        logger.error(f"Error getting profile customization: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/xp/award', methods=['POST'])
+def award_xp():
+    """Award XP to user (for actions like likes, saves, comments)"""
+    if 'user_id' not in session:
+        return jsonify({"error": "Not logged in"}), 401
+    
+    data = request.get_json()
+    amount = data.get('amount', 0)
+    action = data.get('action', 'unknown')
+    
+    if amount <= 0:
+        return jsonify({"error": "Invalid amount"}), 400
+    
+    conn, db_type = get_db()
+    c = get_cursor(conn, db_type)
+    
+    try:
+        # Get current XP and calculate new level
+        if db_type == 'postgres':
+            c.execute("SELECT xp, total_xp_earned FROM user_xp WHERE user_id = %s", (session['user_id'],))
+        else:
+            c.execute("SELECT xp, total_xp_earned FROM user_xp WHERE user_id = ?", (session['user_id'],))
+        
+        row = c.fetchone()
+        if row:
+            current_xp = row['xp'] if hasattr(row, 'keys') else row[0]
+            total_earned = row['total_xp_earned'] if hasattr(row, 'keys') else row[1]
+        else:
+            current_xp = 0
+            total_earned = 0
+        
+        new_xp = current_xp + amount
+        new_total = total_earned + amount
+        new_level = (new_total // 1000) + 1
+        
+        # Update user XP
+        if db_type == 'postgres':
+            c.execute("""
+                INSERT INTO user_xp (user_id, xp, total_xp_earned, level)
+                VALUES (%s, %s, %s, %s)
+                ON CONFLICT (user_id) DO UPDATE SET 
+                    xp = EXCLUDED.xp,
+                    total_xp_earned = EXCLUDED.total_xp_earned,
+                    level = EXCLUDED.level
+            """, (session['user_id'], new_xp, new_total, new_level))
+            
+            c.execute("""
+                INSERT INTO xp_transactions (user_id, amount, type, description)
+                VALUES (%s, %s, 'earned', %s)
+            """, (session['user_id'], amount, action))
+        else:
+            c.execute("""
+                INSERT OR REPLACE INTO user_xp (user_id, xp, total_xp_earned, level)
+                VALUES (?, ?, ?, ?)
+            """, (session['user_id'], new_xp, new_total, new_level))
+            
+            c.execute("""
+                INSERT INTO xp_transactions (user_id, amount, type, description)
+                VALUES (?, ?, 'earned', ?)
+            """, (session['user_id'], amount, action))
+        
+        conn.commit()
+        
+        return jsonify({
+            "success": True,
+            "xp_awarded": amount,
+            "new_total": new_xp,
+            "level": new_level,
+            "leveled_up": new_level > ((total_earned // 1000) + 1)
+        })
+    except Exception as e:
+        logger.error(f"Error awarding XP: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        conn.close()
 
 @app.route('/api/stats')
 def get_stats():
