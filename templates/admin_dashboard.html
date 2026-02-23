@@ -1346,7 +1346,7 @@
         <div class="modal">
             <h3>&#9889; Give XP to User</h3>
             <p style="color:#888;margin:10px 0;font-size:0.9rem;">Current XP: <span id="giveXPCurrent" style="color:#FFD700;font-weight:bold;">0</span> | Level: <span id="giveXPLevel">1</span></p>
-            <input type="number" class="modal-input" id="giveXPAmount" placeholder="Amount of XP to give..." min="1" max="100000">
+            <input type="number" class="modal-input" id="giveXPAmount" placeholder="Amount of XP to give..." min="1" max="1000000">
             <input type="text" class="modal-input" id="giveXPReason" placeholder="Reason (optional)..." value="Admin gift">
             <div style="display:flex;gap:10px;justify-content:flex-end;">
                 <button class="btn" onclick="closeGiveXPModal()" style="background:#333;color:#fff;">Cancel</button>
@@ -1374,6 +1374,21 @@
         let newRestrictHours = 24;
         let currentCommentTab = 'verse';
         let settingsCanEdit = false;
+
+        // Format large numbers (1000 -> 1k, 1000000 -> 1m)
+        function formatNumber(num) {
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'm';
+            }
+            if (num >= 1000) {
+                return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+            }
+            return num.toString();
+        }
+
+        function formatNumberFull(num) {
+            return num.toLocaleString();
+        }
 
         function toggleMenu() {
             document.getElementById('sidebar').classList.toggle('active');
@@ -1885,7 +1900,7 @@
                 document.getElementById('detailLikes').textContent = data.likes || 0;
                 document.getElementById('detailSaves').textContent = data.saves || 0;
                 document.getElementById('detailComments').textContent = data.comments || 0;
-                document.getElementById('detailXP').textContent = data.xp || 0;
+                document.getElementById('detailXP').textContent = formatNumber(data.xp || 0);
                 document.getElementById('detailLevel').textContent = data.level || 1;
                 
                 // Show/hide XP button based on permissions
@@ -1934,7 +1949,7 @@
             const currentXP = document.getElementById('detailXP').textContent;
             const currentLevel = document.getElementById('detailLevel').textContent;
             
-            document.getElementById('giveXPCurrent').textContent = currentXP;
+            document.getElementById('giveXPCurrent').textContent = formatNumber(parseInt(currentXP) || 0);
             document.getElementById('giveXPLevel').textContent = currentLevel;
             document.getElementById('giveXPAmount').value = '';
             document.getElementById('giveXPReason').value = 'Admin gift';
@@ -1957,8 +1972,8 @@
                 return;
             }
             
-            if (amount > 100000) {
-                showToast('Maximum XP per gift is 100,000', 'error');
+            if (amount > 1000000) {
+                showToast('Maximum XP per gift is 1,000,000', 'error');
                 return;
             }
             
@@ -1972,10 +1987,10 @@
                 const data = await res.json();
                 
                 if (data.success) {
-                    showToast(`Successfully gave ${amount} XP to ${data.user_name}!`, 'success');
+                    showToast(`Successfully gave ${formatNumberFull(amount)} XP to ${data.user_name}!`, 'success');
                     
                     // Update display
-                    document.getElementById('detailXP').textContent = data.new_total;
+                    document.getElementById('detailXP').textContent = formatNumber(data.new_total);
                     document.getElementById('detailLevel').textContent = data.new_level;
                     
                     if (data.leveled_up) {

@@ -2183,7 +2183,9 @@
         .comment-name-row {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+            flex-wrap: wrap;
+            row-gap: 4px;
         }
 
         .comment-role-badge {
@@ -3653,6 +3655,7 @@
         .shop-item.legendary { border-color: #FFD700; background: linear-gradient(135deg, rgba(255,215,0,0.1), var(--surface)); }
         .shop-item.epic { border-color: #BF5AF2; background: linear-gradient(135deg, rgba(191,90,242,0.1), var(--surface)); }
         .shop-item.rare { border-color: #0A84FF; background: linear-gradient(135deg, rgba(10,132,255,0.1), var(--surface)); }
+        .shop-item.mythic { border-color: #FF1493; background: linear-gradient(135deg, rgba(255,20,147,0.15), var(--surface)); box-shadow: 0 0 30px rgba(255,20,147,0.2); }
         
         .shop-item-icon { font-size: 48px; margin-bottom: 12px; display: block; }
         .shop-item-name { font-weight: 600; font-size: 14px; margin-bottom: 6px; color: var(--text-primary); }
@@ -3662,6 +3665,7 @@
         .shop-item-rarity.epic { background: rgba(191,90,242,0.2); color: #BF5AF2; }
         .shop-item-rarity.rare { background: rgba(10,132,255,0.2); color: #0A84FF; }
         .shop-item-rarity.common { background: rgba(142,142,147,0.2); color: var(--text-secondary); }
+        .shop-item-rarity.mythic { background: linear-gradient(135deg, rgba(255,20,147,0.3), rgba(138,43,226,0.3)); color: #FF1493; font-weight: 700; animation: mythicPulse 2s infinite; }
         
         .shop-item-price { display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700; color: var(--primary); font-size: 16px; margin-bottom: 10px; }
         .shop-item-price.owned { color: var(--success); }
@@ -3759,6 +3763,8 @@
         @keyframes neonPulse { 0% { text-shadow: 0 0 10px #39FF14, 0 0 20px #39FF14; } 100% { text-shadow: 0 0 20px #39FF14, 0 0 40px #39FF14; } }
         @keyframes sparkle { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.2); } }
         @keyframes fireText { 0% { text-shadow: 0 0 10px #FF4500; } 100% { text-shadow: 0 0 20px #FF4500, 0 0 30px #FF4500; } }
+        @keyframes mythicPulse { 0%, 100% { box-shadow: 0 0 10px rgba(255,20,147,0.4); } 50% { box-shadow: 0 0 25px rgba(255,20,147,0.7); } }
+        @keyframes mythicShine { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
         
         /* Shop Item Effects - Profile Frames */
         .profile-frame { position: relative; }
@@ -3776,6 +3782,15 @@
         .profile-frame-frame_nature { border: 3px solid #228B22 !important; box-shadow: 0 0 15px rgba(34,139,34,0.4) !important; }
         .profile-frame-frame_nature::after { content: '🌿'; position: absolute; top: -6px; left: -6px; font-size: 16px; animation: leafSway 2s ease-in-out infinite; }
         .profile-frame-frame_stars { border: 2px solid transparent !important; background: linear-gradient(135deg, #FFD700, #FF69B4, #00CED1) border-box !important; -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; animation: starTwinkle 2s infinite; }
+        .profile-frame-frame_wood { border: 3px solid #8B4513 !important; }
+        .profile-frame-frame_stone { border: 3px solid #808080 !important; box-shadow: inset 0 0 10px rgba(128,128,128,0.3) !important; }
+        /* Mythic Frames */
+        .profile-frame-frame_divine { border: 3px solid transparent !important; background: linear-gradient(135deg, #FFD700, #FF1493, #00CED1) border-box !important; animation: mythicPulse 2s infinite; }
+        .profile-frame-frame_divine::after { content: '😇'; position: absolute; top: -10px; right: -10px; font-size: 22px; animation: angelFloat 2s ease-in-out infinite; }
+        .profile-frame-frame_cosmic { border: 3px solid #9400D3 !important; box-shadow: 0 0 30px rgba(148,0,211,0.6), inset 0 0 20px rgba(148,0,211,0.3) !important; animation: mythicPulse 1.5s infinite; }
+        .profile-frame-frame_cosmic::after { content: '🌌'; position: absolute; top: -8px; left: -8px; font-size: 20px; animation: starTwinkle 1s infinite; }
+        .profile-frame-frame_infinity { border: 3px solid transparent !important; background: linear-gradient(135deg, #FF1493, #00FF87, #00CED1) border-box !important; animation: rainbow 3s linear infinite; box-shadow: 0 0 25px rgba(255,20,147,0.5) !important; }
+        .profile-frame-frame_infinity::after { content: '♾️'; position: absolute; bottom: -8px; right: -8px; font-size: 22px; }
         
         /* Shop Item Effects - Name Colors */
         .profile-name-color_rainbow { background: linear-gradient(90deg, #FF0000, #FF7F00, #FFFF00, #00FF00, #0000FF, #4B0082, #9400D3) !important; -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; background-clip: text !important; animation: rainbow 3s linear infinite; font-weight: 700 !important; }
@@ -3787,6 +3802,15 @@
         .profile-name-color_green { color: #30D158 !important; text-shadow: 0 0 10px rgba(48,209,88,0.4) !important; font-weight: 700 !important; }
         .profile-name-color_neon { color: #39FF14 !important; text-shadow: 0 0 10px #39FF14, 0 0 20px #39FF14 !important; animation: neonPulse 1.5s infinite alternate; font-weight: 700 !important; }
         .profile-name-color_pink { color: #FF69B4 !important; font-weight: 700 !important; }
+        .profile-name-color_orange { color: #FF9500 !important; font-weight: 700 !important; }
+        .profile-name-color_teal { color: #00CED1 !important; font-weight: 700 !important; }
+        .profile-name-color_cyan { color: #00FFFF !important; text-shadow: 0 0 10px rgba(0,255,255,0.4) !important; font-weight: 700 !important; }
+        .profile-name-color_plasma { color: #FF00FF !important; text-shadow: 0 0 10px #FF00FF, 0 0 20px #FF00FF !important; animation: neonPulse 1.5s infinite alternate; font-weight: 700 !important; }
+        .profile-name-color_aurora { background: linear-gradient(90deg, #00FF87, #60EFFF, #0061FF) !important; -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; background-clip: text !important; animation: rainbow 4s linear infinite; font-weight: 700 !important; }
+        /* Mythic Name Colors */
+        .profile-name-color_phoenix { background: linear-gradient(90deg, #FF0000, #FF6600, #FFCC00) !important; -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; background-clip: text !important; animation: fireText 1s infinite alternate; font-weight: 700 !important; }
+        .profile-name-color_void { color: #1a0033 !important; text-shadow: 0 0 20px rgba(147,0,211,0.8), 0 0 40px rgba(147,0,211,0.4) !important; font-weight: 700 !important; }
+        .profile-name-color_godly { background: linear-gradient(90deg, #FFD700, #FFFFFF, #FFD700, #FFFFFF) !important; -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; background-clip: text !important; animation: rainbow 2s linear infinite; font-weight: 700 !important; text-shadow: 0 0 30px rgba(255,215,0,0.5) !important; }
         
         /* Shop Item Effects - Titles */
         .user-title { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 2px 8px; border-radius: 12px; margin-left: 6px; font-weight: 600; vertical-align: middle; }
@@ -3794,6 +3818,7 @@
         .user-title-epic { background: linear-gradient(135deg, #9400D3, #FF00FF); color: #fff; }
         .user-title-rare { background: linear-gradient(135deg, #00BFFF, #1E90FF); color: #fff; }
         .user-title-common { background: linear-gradient(135deg, #808080, #A9A9A9); color: #fff; }
+        .user-title-mythic { background: linear-gradient(135deg, #FF1493, #9400D3, #00CED1); color: #fff; box-shadow: 0 0 20px rgba(255,20,147,0.5); animation: mythicShine 3s linear infinite; }
         
         /* Shop Item Effects - Badges */
         .user-badge-icon { display: inline-flex; align-items: center; justify-content: center; margin-left: 4px; font-size: 14px; cursor: help; vertical-align: middle; }
@@ -3804,6 +3829,12 @@
         .chat-effect-chat_rainbow { background: linear-gradient(90deg, #FF0000, #FF7F00, #FFFF00, #00FF00, #0000FF, #9400D3) !important; -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; background-clip: text !important; animation: rainbow 5s linear infinite; }
         .chat-effect-chat_glow { box-shadow: 0 0 20px rgba(255,215,0,0.3); border-radius: 8px; padding: 8px; background: rgba(255,215,0,0.05); }
         .chat-effect-chat_fire { color: #FF4500 !important; text-shadow: 0 0 15px #FF4500, 0 0 25px #FF6347 !important; animation: fireText 0.8s infinite alternate; }
+        .chat-effect-chat_shadow { color: #666 !important; text-shadow: 2px 2px 4px rgba(0,0,0,0.8) !important; }
+        .chat-effect-chat_ice { color: #00CED1 !important; text-shadow: 0 0 15px #00CED1, 0 0 25px #00FFFF !important; animation: iceGlow 1s infinite alternate; }
+        .chat-effect-chat_gold { color: #FFD700 !important; text-shadow: 0 0 15px #FFD700 !important; animation: goldPulse 2s infinite; }
+        /* Mythic Chat Effects */
+        .chat-effect-chat_universe { background: linear-gradient(90deg, #9400D3, #00CED1, #FF1493) !important; -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; background-clip: text !important; animation: rainbow 3s linear infinite; font-weight: 700 !important; }
+        .chat-effect-chat_godly { color: #FFD700 !important; text-shadow: 0 0 20px #FFD700, 0 0 40px #FF1493 !important; animation: mythicPulse 1s infinite; font-weight: 700 !important; }
     </style>
 </head>
 <body>
@@ -6711,9 +6742,9 @@
                                 ` : `
                                     <div class="comment-name ${nameColorClass}">${c.user_name}</div>
                                 `}
+                                <span class="comment-role-badge comment-role-${role}">${escapeHtml(roleDisplay)}</span>
                                 ${badgesHtml}
                                 ${titleHtml}
-                                <span class="comment-role-badge comment-role-${role}">${escapeHtml(roleDisplay)}</span>
                             </div>
                             <div class="comment-time">${formatLocalTimestamp(c.timestamp)}</div>
                         </div>
@@ -6789,9 +6820,9 @@
                                     ` : `
                                         <div class="comment-name ${nameColorClass}">${escapeHtml(r.user_name || 'Anonymous')}</div>
                                     `}
+                                    <span class="comment-role-badge comment-role-${role}">${escapeHtml(roleDisplay)}</span>
                                     ${badgesHtml}
                                     ${titleHtml}
-                                    <span class="comment-role-badge comment-role-${role}">${escapeHtml(roleDisplay)}</span>
                                 </div>
                                 <div class="comment-time">${r.timestamp ? formatLocalTimestamp(r.timestamp) : ''}</div>
                             </div>
@@ -9531,6 +9562,17 @@ function loadAchievements(stats) {
         let currentShopTab = 'shop';
         let currentCategory = 'all';
         
+        // Format large numbers (1000 -> 1k, 1000000 -> 1m)
+        function formatNumber(num) {
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'm';
+            }
+            if (num >= 1000) {
+                return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+            }
+            return num.toString();
+        }
+        
         async function loadShopData() {
             try {
                 const itemsRes = await fetch('/api/shop/items');
@@ -9564,7 +9606,7 @@ function loadAchievements(stats) {
         function updateShopXPDisplay() {
             const xpEl = document.getElementById('shopXpAmount');
             const levelEl = document.getElementById('shopLevel');
-            if (xpEl) xpEl.textContent = userXP.xp + ' XP';
+            if (xpEl) xpEl.textContent = formatNumber(userXP.xp) + ' XP';
             if (levelEl) levelEl.textContent = 'Level ' + userXP.level;
         }
         
@@ -9609,7 +9651,7 @@ function loadAchievements(stats) {
                     '<div class="shop-item-name">' + item.name + '</div>' +
                     '<div class="shop-item-desc">' + item.description + '</div>' +
                     '<span class="shop-item-rarity ' + rarityClass + '">' + item.rarity + '</span>' +
-                    '<div class="shop-item-price ' + (owned ? 'owned' : '') + '">' + (owned ? '✓ Owned' : '⚡ ' + item.price + ' XP') + '</div>' +
+                    '<div class="shop-item-price ' + (owned ? 'owned' : '') + '">' + (owned ? '✓ Owned' : '⚡ ' + formatNumber(item.price) + ' XP') + '</div>' +
                     '<button class="shop-item-btn" ' + (owned ? 'disabled' : '') + ' onclick="purchaseItem(' + "'" + item.item_id + "'" + ', ' + item.price + ')">' + (owned ? 'Owned' : 'Buy') + '</button>' +
                     '</div>';
             }).join('');
