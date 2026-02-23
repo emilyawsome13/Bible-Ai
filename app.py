@@ -75,6 +75,75 @@ def role_priority(role):
     order = {'user': 0, 'host': 1, 'mod': 2, 'co_owner': 3, 'owner': 4}
     return order.get(normalize_role(role), 0)
 
+def get_user_equipped_items(c, db_type, user_id):
+    """Get a user's equipped profile items for display on comments/messages"""
+    if not user_id:
+        return {
+            "frame": None,
+            "name_color": None,
+            "title": None,
+            "badges": [],
+            "chat_effect": None,
+            "profile_bg": None
+        }
+    
+    try:
+        if db_type == 'postgres':
+            c.execute("""
+                SELECT s.item_id, s.category, s.effects, s.name, s.icon, s.rarity
+                FROM user_inventory i
+                JOIN shop_items s ON i.item_id = s.item_id
+                WHERE i.user_id = %s AND i.equipped = TRUE
+            """, (user_id,))
+        else:
+            c.execute("""
+                SELECT s.item_id, s.category, s.effects, s.name, s.icon, s.rarity
+                FROM user_inventory i
+                JOIN shop_items s ON i.item_id = s.item_id
+                WHERE i.user_id = ? AND i.equipped = 1
+            """, (user_id,))
+        
+        equipped = {
+            "frame": None,
+            "name_color": None,
+            "title": None,
+            "badges": [],
+            "chat_effect": None,
+            "profile_bg": None
+        }
+        
+        for row in c.fetchall():
+            try:
+                category = row['category'] if hasattr(row, 'keys') else row[1]
+                effects = row['effects'] if isinstance(row['effects'], dict) else json.loads(row['effects'] or '{}')
+                item_data = {
+                    "item_id": row['item_id'] if hasattr(row, 'keys') else row[0],
+                    "name": row['name'] if hasattr(row, 'keys') else row[3],
+                    "icon": row['icon'] if hasattr(row, 'keys') else row[4],
+                    "rarity": row['rarity'] if hasattr(row, 'keys') else row[5],
+                    "effects": effects
+                }
+                
+                if category == 'badge':
+                    equipped['badges'].append(item_data)
+                elif category in equipped:
+                    equipped[category] = item_data
+            except Exception as e:
+                logger.error(f"Error parsing equipped item: {e}")
+                continue
+        
+        return equipped
+    except Exception as e:
+        logger.error(f"Error getting equipped items: {e}")
+        return {
+            "frame": None,
+            "name_color": None,
+            "title": None,
+            "badges": [],
+            "chat_effect": None,
+            "profile_bg": None
+        }
+
 ADMIN_CODE = os.environ.get('ADMIN_CODE', 'God Is All')
 MASTER_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'God Is All')
 
@@ -1385,6 +1454,9 @@ def get_replies_for_parent(c, db_type, parent_type, parent_id):
             db_picture = row[7] if len(row) > 7 else None
             db_role = row[8] if len(row) > 8 else None
             db_decor = row[9] if len(row) > 9 else None
+        # Get user's equipped items for display
+        equipped = get_user_equipped_items(c, db_type, user_id)
+        
         replies.append({
             "id": reply_id,
             "user_id": user_id,
@@ -1393,7 +1465,12 @@ def get_replies_for_parent(c, db_type, parent_type, parent_id):
             "user_name": db_name or google_name or "Anonymous",
             "user_picture": db_picture or google_picture or "",
             "user_role": normalize_role(db_role or "user"),
-            "avatar_decoration": db_decor or ""
+            "avatar_decoration": db_decor or "",
+            "equipped_frame": equipped["frame"],
+            "equipped_name_color": equipped["name_color"],
+            "equipped_title": equipped["title"],
+            "equipped_badges": equipped["badges"],
+            "equipped_chat_effect": equipped["chat_effect"]
         })
     return replies
 
@@ -3814,14 +3891,14 @@ def get_user_profile_customization(user_id):
     try:
         if db_type == 'postgres':
             c.execute("""
-                SELECT s.item_id, s.category, s.effects, s.name, s.icon
+                SELECT s.item_id, s.category, s.effects, s.name, s.icon, s.rarity
                 FROM user_inventory i
                 JOIN shop_items s ON i.item_id = s.item_id
                 WHERE i.user_id = %s AND i.equipped = TRUE
             """, (user_id,))
         else:
             c.execute("""
-                SELECT s.item_id, s.category, s.effects, s.name, s.icon
+                SELECT s.item_id, s.category, s.effects, s.name, s.icon, s.rarity
                 FROM user_inventory i
                 JOIN shop_items s ON i.item_id = s.item_id
                 WHERE i.user_id = ? AND i.equipped = 1
@@ -3843,6 +3920,7 @@ def get_user_profile_customization(user_id):
                 "item_id": row['item_id'] if hasattr(row, 'keys') else row[0],
                 "name": row['name'] if hasattr(row, 'keys') else row[3],
                 "icon": row['icon'] if hasattr(row, 'keys') else row[4],
+                "rarity": row['rarity'] if hasattr(row, 'keys') else row[5],
                 "effects": effects
             }
             
@@ -4878,6 +4956,10 @@ def public_profile(user_id):
                 created_display = dt.strftime('%b %d, %Y')
             except Exception:
                 created_display = str(created_at)
+        
+        # Get user's equipped items for display
+        equipped = get_user_equipped_items(c, db_type, user_id)
+        
         conn.close()
         return render_template('public_profile.html', user={
             "id": uid,
@@ -4888,7 +4970,12 @@ def public_profile(user_id):
             "role": role,
             "role_display": role.replace('_', ' ').upper(),
             "created_at": created_at,
-            "created_at_display": created_display
+            "created_at_display": created_display,
+            "equipped_frame": equipped["frame"],
+            "equipped_name_color": equipped["name_color"],
+            "equipped_title": equipped["title"],
+            "equipped_badges": equipped["badges"],
+            "equipped_profile_bg": equipped["profile_bg"]
         }, show_email=show_email, can_dm=can_dm)
     except Exception as e:
         try:
@@ -5283,6 +5370,10 @@ def get_comments(verse_id):
                     logger.error(f"Error getting user info: {user_err}")
             
             replies = get_replies_for_parent(c, db_type, "comment", comment_id)
+            
+            # Get user's equipped items for display
+            equipped = get_user_equipped_items(c, db_type, user_id)
+            
             comments.append({
                 "id": comment_id,
                 "text": text or "",
@@ -5294,7 +5385,12 @@ def get_comments(verse_id):
                 "user_role": user_role,
                 "reactions": get_reaction_counts(c, db_type, "comment", comment_id),
                 "replies": replies,
-                "reply_count": len(replies)
+                "reply_count": len(replies),
+                "equipped_frame": equipped["frame"],
+                "equipped_name_color": equipped["name_color"],
+                "equipped_title": equipped["title"],
+                "equipped_badges": equipped["badges"],
+                "equipped_chat_effect": equipped["chat_effect"]
             })
         
         return jsonify(comments)
@@ -5529,6 +5625,10 @@ def get_community_messages():
             user_picture = db_picture or google_picture or ""
             
             replies = get_replies_for_parent(c, db_type, "community", msg_id)
+            
+            # Get user's equipped items for display
+            equipped = get_user_equipped_items(c, db_type, user_id)
+            
             messages.append({
                 "id": msg_id,
                 "text": text or "",
@@ -5540,7 +5640,12 @@ def get_community_messages():
                 "user_role": db_role or "user",
                 "reactions": get_reaction_counts(c, db_type, "community", msg_id),
                 "replies": replies,
-                "reply_count": len(replies)
+                "reply_count": len(replies),
+                "equipped_frame": equipped["frame"],
+                "equipped_name_color": equipped["name_color"],
+                "equipped_title": equipped["title"],
+                "equipped_badges": equipped["badges"],
+                "equipped_chat_effect": equipped["chat_effect"]
             })
         
         return jsonify(messages)

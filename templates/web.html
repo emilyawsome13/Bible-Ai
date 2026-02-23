@@ -3678,21 +3678,132 @@
         
         /* Profile customization display */
         .profile-frame { position: absolute; inset: -8px; border-radius: 50%; pointer-events: none; }
-        .profile-frame.gold { border: 3px solid #FFD700; box-shadow: 0 0 20px rgba(255,215,0,0.5); }
+        .profile-frame.gold { border: 3px solid #FFD700; box-shadow: 0 0 20px rgba(255,215,0,0.5); animation: goldPulse 2s ease-in-out infinite; }
         .profile-frame.silver { border: 3px solid #C0C0C0; box-shadow: 0 0 15px rgba(192,192,192,0.4); }
-        .profile-frame.angel::before { content: '🪽'; position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 24px; animation: float 2s ease-in-out infinite; }
+        .profile-frame.bronze { border: 3px solid #CD7F32; box-shadow: 0 0 12px rgba(205,127,50,0.4); }
+        .profile-frame.angel { border: 2px solid transparent; }
+        .profile-frame.angel::before { content: '🪽'; position: absolute; top: -25px; left: 50%; transform: translateX(-50%); font-size: 28px; animation: angelFloat 3s ease-in-out infinite; filter: drop-shadow(0 0 8px rgba(255,255,255,0.6)); }
+        .profile-frame.angel::after { content: '🪽'; position: absolute; bottom: -25px; left: 50%; transform: translateX(-50%) scaleY(-1); font-size: 28px; animation: angelFloat 3s ease-in-out infinite 0.5s; filter: drop-shadow(0 0 8px rgba(255,255,255,0.6)); }
+        .profile-frame.cross { border: 3px solid #8B4513; box-shadow: 0 0 15px rgba(139,69,19,0.4); }
+        .profile-frame.cross::before { content: '✝️'; position: absolute; top: -15px; left: 50%; transform: translateX(-50%); font-size: 20px; filter: drop-shadow(0 0 5px rgba(255,215,0,0.8)); }
+        .profile-frame.heart { border: 3px solid #FF69B4; box-shadow: 0 0 15px rgba(255,105,180,0.5); animation: heartBeat 1.5s ease-in-out infinite; }
+        .profile-frame.fire { border: 3px solid transparent; background: linear-gradient(135deg, #FF4500, #FFD700) border-box; -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0); mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; animation: fireFlicker 0.5s ease-in-out infinite alternate; }
+        .profile-frame.ice { border: 3px solid #00CED1; box-shadow: 0 0 15px rgba(0,206,209,0.5), inset 0 0 10px rgba(0,206,209,0.2); animation: iceGlow 2s ease-in-out infinite alternate; }
+        .profile-frame.nature { border: 3px solid #228B22; box-shadow: 0 0 15px rgba(34,139,34,0.4); }
+        .profile-frame.nature::before { content: '🌿'; position: absolute; top: -10px; left: -10px; font-size: 18px; animation: leafSway 2s ease-in-out infinite; }
+        .profile-frame.nature::after { content: '🌿'; position: absolute; bottom: -10px; right: -10px; font-size: 18px; animation: leafSway 2s ease-in-out infinite 1s; }
+        .profile-frame.stars { border: 3px solid transparent; background: linear-gradient(135deg, #FFD700, #FF69B4, #00CED1) border-box; -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0); mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; animation: starTwinkle 1s ease-in-out infinite; }
         
-        .profile-name.rainbow { background: linear-gradient(90deg, #FF0000, #FF7F00, #FFFF00, #00FF00, #0000FF, #4B0082, #9400D3); -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: rainbow 3s linear infinite; }
-        .profile-name.gold { color: #FFD700; text-shadow: 0 0 10px rgba(255,215,0,0.5); }
-        .profile-name.neon { color: #39FF14; text-shadow: 0 0 10px #39FF14; animation: pulse 1.5s ease-in-out infinite; }
+        /* Name Colors */
+        .user-name.gold { color: #FFD700 !important; text-shadow: 0 0 10px rgba(255,215,0,0.5); }
+        .user-name.rainbow { background: linear-gradient(90deg, #FF0000, #FF7F00, #FFFF00, #00FF00, #0000FF, #4B0082, #9400D3); -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: rainbow 3s linear infinite; }
+        .user-name.blue { color: #0A84FF !important; text-shadow: 0 0 8px rgba(10,132,255,0.4); }
+        .user-name.red { color: #FF375F !important; text-shadow: 0 0 8px rgba(255,55,95,0.4); }
+        .user-name.purple { color: #BF5AF2 !important; text-shadow: 0 0 8px rgba(191,90,242,0.4); }
+        .user-name.green { color: #30D158 !important; text-shadow: 0 0 8px rgba(48,209,88,0.4); }
+        .user-name.neon { color: #39FF14 !important; text-shadow: 0 0 10px #39FF14, 0 0 20px #39FF14; animation: neonPulse 1s ease-in-out infinite alternate; }
+        .user-name.pink { color: #FF69B4 !important; }
         
-        .profile-badge { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; font-size: 12px; margin-left: 4px; }
+        /* Titles */
+        .user-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 10px; margin-right: 6px; display: inline-flex; align-items: center; gap: 3px; }
+        .user-title.legendary { background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; }
+        .user-title.epic { background: linear-gradient(135deg, #BF5AF2, #9F5AF2); color: #fff; }
+        .user-title.rare { background: linear-gradient(135deg, #0A84FF, #0077FF); color: #fff; }
+        .user-title.common { background: rgba(142,142,147,0.3); color: var(--text-secondary); }
         
-        .profile-title { font-size: 12px; color: var(--primary); font-weight: 600; margin-top: 4px; }
+        /* Badges */
+        .user-badges { display: inline-flex; gap: 3px; margin-left: 4px; vertical-align: middle; }
+        .user-badge-small { width: 18px; height: 18px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         
+        /* Chat Effects */
+        .chat-message.sparkle { position: relative; }
+        .chat-message.sparkle::before { content: '✨'; position: absolute; left: -20px; animation: sparkle 1s ease-in-out infinite; }
+        .chat-message.rainbow-text { background: linear-gradient(90deg, #FF0000, #FF7F00, #FFFF00, #00FF00, #0000FF, #4B0082, #9400D3); -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: rainbow 3s linear infinite; }
+        .chat-message.glow { text-shadow: 0 0 10px #FFD700, 0 0 20px #FFD700; }
+        .chat-message.fire-text { color: #FF4500; text-shadow: 0 0 10px #FF4500; animation: fireText 0.5s ease-in-out infinite alternate; }
+        
+        /* Profile Backgrounds */
+        .profile-bg-golden { background: linear-gradient(135deg, rgba(255,215,0,0.3), rgba(255,165,0,0.2)) !important; }
+        .profile-bg-night { background: linear-gradient(135deg, rgba(25,25,112,0.4), rgba(75,0,130,0.3)) !important; position: relative; overflow: hidden; }
+        .profile-bg-night::before { content: '✨'; position: absolute; top: 10%; left: 10%; animation: starTwinkle 2s infinite; }
+        .profile-bg-night::after { content: '⭐'; position: absolute; bottom: 20%; right: 15%; animation: starTwinkle 3s infinite 1s; }
+        .profile-bg-clouds { background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(200,220,255,0.2)) !important; }
+        .profile-bg-nature { background: linear-gradient(135deg, rgba(34,139,34,0.3), rgba(144,238,144,0.2)) !important; }
+        .profile-bg-ocean { background: linear-gradient(135deg, rgba(0,119,190,0.3), rgba(0,206,209,0.2)) !important; }
+        .profile-bg-fire { background: linear-gradient(135deg, rgba(255,69,0,0.3), rgba(255,215,0,0.2)) !important; }
+        
+        /* Comment Avatar Frames */
+        .comment-avatar-frame { position: absolute; inset: -4px; border-radius: 50%; pointer-events: none; }
+        .comment-avatar-frame.gold { border: 2px solid #FFD700; box-shadow: 0 0 10px rgba(255,215,0,0.4); }
+        .comment-avatar-frame.silver { border: 2px solid #C0C0C0; box-shadow: 0 0 8px rgba(192,192,192,0.3); }
+        .comment-avatar-frame.bronze { border: 2px solid #CD7F32; box-shadow: 0 0 6px rgba(205,127,50,0.3); }
+        .comment-avatar-frame.angel::before { content: '🪽'; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); font-size: 14px; }
+        .comment-avatar-frame.cross::before { content: '✝️'; position: absolute; top: -8px; left: 50%; transform: translateX(-50%); font-size: 10px; }
+        .comment-avatar-frame.heart { border: 2px solid #FF69B4; box-shadow: 0 0 8px rgba(255,105,180,0.4); }
+        .comment-avatar-frame.fire { border: 2px solid #FF4500; box-shadow: 0 0 8px rgba(255,69,0,0.4); }
+        .comment-avatar-frame.ice { border: 2px solid #00CED1; box-shadow: 0 0 8px rgba(0,206,209,0.4); }
+        .comment-avatar-frame.nature { border: 2px solid #228B22; box-shadow: 0 0 8px rgba(34,139,34,0.3); }
+        .comment-avatar-frame.stars { border: 2px solid transparent; background: linear-gradient(135deg, #FFD700, #FF69B4) border-box; -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+        
+        /* Animations */
         @keyframes rainbow { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
         @keyframes float { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-5px); } }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        @keyframes goldPulse { 0%, 100% { box-shadow: 0 0 20px rgba(255,215,0,0.5); } 50% { box-shadow: 0 0 30px rgba(255,215,0,0.8); } }
+        @keyframes angelFloat { 0%, 100% { transform: translateX(-50%) translateY(0) rotate(0deg); } 50% { transform: translateX(-50%) translateY(-8px) rotate(5deg); } }
+        @keyframes heartBeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        @keyframes fireFlicker { 0% { opacity: 0.8; } 100% { opacity: 1; } }
+        @keyframes iceGlow { 0% { box-shadow: 0 0 15px rgba(0,206,209,0.5); } 100% { box-shadow: 0 0 25px rgba(0,206,209,0.8); } }
+        @keyframes leafSway { 0%, 100% { transform: rotate(-10deg); } 50% { transform: rotate(10deg); } }
+        @keyframes starTwinkle { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes neonPulse { 0% { text-shadow: 0 0 10px #39FF14, 0 0 20px #39FF14; } 100% { text-shadow: 0 0 20px #39FF14, 0 0 40px #39FF14; } }
+        @keyframes sparkle { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.2); } }
+        @keyframes fireText { 0% { text-shadow: 0 0 10px #FF4500; } 100% { text-shadow: 0 0 20px #FF4500, 0 0 30px #FF4500; } }
+        
+        /* Shop Item Effects - Profile Frames */
+        .profile-frame { position: relative; }
+        .profile-frame-frame_gold { border: 3px solid #FFD700 !important; box-shadow: 0 0 20px rgba(255,215,0,0.5), inset 0 0 10px rgba(255,215,0,0.2) !important; animation: goldPulse 2s infinite; }
+        .profile-frame-frame_silver { border: 3px solid #C0C0C0 !important; box-shadow: 0 0 15px rgba(192,192,192,0.4) !important; }
+        .profile-frame-frame_bronze { border: 3px solid #CD7F32 !important; box-shadow: 0 0 12px rgba(205,127,50,0.4) !important; }
+        .profile-frame-frame_angel { border: 3px solid transparent !important; }
+        .profile-frame-frame_angel::after { content: '🪽'; position: absolute; top: -8px; right: -8px; font-size: 18px; animation: angelFloat 2s ease-in-out infinite; }
+        .profile-frame-frame_cross { border: 3px solid #8B4513 !important; box-shadow: 0 0 15px rgba(139,69,19,0.4) !important; }
+        .profile-frame-frame_cross::after { content: '✝️'; position: absolute; top: -10px; left: 50%; transform: translateX(-50%); font-size: 16px; }
+        .profile-frame-frame_heart { border: 3px solid #FF69B4 !important; }
+        .profile-frame-frame_heart::after { content: '💖'; position: absolute; bottom: -6px; right: -6px; font-size: 16px; animation: heartBeat 1.5s infinite; }
+        .profile-frame-frame_fire { border: 3px solid #FF4500 !important; box-shadow: 0 0 20px rgba(255,69,0,0.5) !important; animation: fireFlicker 1s infinite alternate; }
+        .profile-frame-frame_ice { border: 3px solid #00CED1 !important; box-shadow: 0 0 20px rgba(0,206,209,0.5) !important; animation: iceGlow 2s infinite alternate; }
+        .profile-frame-frame_nature { border: 3px solid #228B22 !important; box-shadow: 0 0 15px rgba(34,139,34,0.4) !important; }
+        .profile-frame-frame_nature::after { content: '🌿'; position: absolute; top: -6px; left: -6px; font-size: 16px; animation: leafSway 2s ease-in-out infinite; }
+        .profile-frame-frame_stars { border: 2px solid transparent !important; background: linear-gradient(135deg, #FFD700, #FF69B4, #00CED1) border-box !important; -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; animation: starTwinkle 2s infinite; }
+        
+        /* Shop Item Effects - Name Colors */
+        .profile-name-color_rainbow { background: linear-gradient(90deg, #FF0000, #FF7F00, #FFFF00, #00FF00, #0000FF, #4B0082, #9400D3) !important; -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; background-clip: text !important; animation: rainbow 3s linear infinite; font-weight: 700 !important; }
+        .profile-name-color_gold { color: #FFD700 !important; text-shadow: 0 0 10px rgba(255,215,0,0.5) !important; font-weight: 700 !important; }
+        .profile-name-color_silver { color: #C0C0C0 !important; text-shadow: 0 0 8px rgba(192,192,192,0.4) !important; font-weight: 700 !important; }
+        .profile-name-color_blue { color: #0A84FF !important; text-shadow: 0 0 10px rgba(10,132,255,0.4) !important; font-weight: 700 !important; }
+        .profile-name-color_red { color: #FF375F !important; text-shadow: 0 0 10px rgba(255,55,95,0.4) !important; font-weight: 700 !important; }
+        .profile-name-color_purple { color: #BF5AF2 !important; text-shadow: 0 0 10px rgba(191,90,242,0.4) !important; font-weight: 700 !important; }
+        .profile-name-color_green { color: #30D158 !important; text-shadow: 0 0 10px rgba(48,209,88,0.4) !important; font-weight: 700 !important; }
+        .profile-name-color_neon { color: #39FF14 !important; text-shadow: 0 0 10px #39FF14, 0 0 20px #39FF14 !important; animation: neonPulse 1.5s infinite alternate; font-weight: 700 !important; }
+        .profile-name-color_pink { color: #FF69B4 !important; font-weight: 700 !important; }
+        
+        /* Shop Item Effects - Titles */
+        .user-title { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 2px 8px; border-radius: 12px; margin-left: 6px; font-weight: 600; vertical-align: middle; }
+        .user-title-legendary { background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; box-shadow: 0 0 10px rgba(255,215,0,0.4); }
+        .user-title-epic { background: linear-gradient(135deg, #9400D3, #FF00FF); color: #fff; }
+        .user-title-rare { background: linear-gradient(135deg, #00BFFF, #1E90FF); color: #fff; }
+        .user-title-common { background: linear-gradient(135deg, #808080, #A9A9A9); color: #fff; }
+        
+        /* Shop Item Effects - Badges */
+        .user-badge-icon { display: inline-flex; align-items: center; justify-content: center; margin-left: 4px; font-size: 14px; cursor: help; vertical-align: middle; }
+        
+        /* Shop Item Effects - Chat Effects */
+        .chat-effect-chat_sparkle { position: relative; }
+        .chat-effect-chat_sparkle::before { content: '✨'; position: absolute; left: -20px; animation: sparkle 1.5s infinite; }
+        .chat-effect-chat_rainbow { background: linear-gradient(90deg, #FF0000, #FF7F00, #FFFF00, #00FF00, #0000FF, #9400D3) !important; -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; background-clip: text !important; animation: rainbow 5s linear infinite; }
+        .chat-effect-chat_glow { box-shadow: 0 0 20px rgba(255,215,0,0.3); border-radius: 8px; padding: 8px; background: rgba(255,215,0,0.05); }
+        .chat-effect-chat_fire { color: #FF4500 !important; text-shadow: 0 0 15px #FF4500, 0 0 25px #FF6347 !important; animation: fireText 0.8s infinite alternate; }
     </style>
 </head>
 <body>
@@ -6087,6 +6198,9 @@
                 document.querySelectorAll('.delete-comment-btn').forEach(btn => btn.classList.add('show'));
             }
             applyRestrictionState();
+            
+            // Apply shop effects to comments
+            setTimeout(() => applyShopEffectsToComments(), 100);
         }
 
         async function postComment() {
@@ -6159,6 +6273,9 @@
                 document.querySelectorAll('.delete-comment-btn').forEach(btn => btn.classList.add('show'));
             }
             applyRestrictionState();
+            
+            // Apply shop effects to community messages
+            setTimeout(() => applyShopEffectsToComments(), 100);
         }
 
         async function postCommunityMessage() {
@@ -6542,6 +6659,21 @@
             try { input.setSelectionRange(len, len); } catch (_) {}
         }
 
+        // Cache for user customizations to avoid repeated API calls
+        const userCustomizationCache = new Map();
+        
+        async function fetchUserCustomization(userId) {
+            if (!userId) return null;
+            if (userCustomizationCache.has(userId)) {
+                return userCustomizationCache.get(userId);
+            }
+            const customization = await getUserCustomization(userId);
+            if (customization) {
+                userCustomizationCache.set(userId, customization);
+            }
+            return customization;
+        }
+        
         function renderCommentItem(c, type) {
             const isOwner = c.user_id === parseInt('{{ user.id }}');
             const reactions = c.reactions || { 'heart': 0, 'pray': 0, 'cross': 0 };
@@ -6553,10 +6685,18 @@
             const replyOpen = openReplyKey === replyKey;
             const replyDraft = replyDrafts[replyKey] || '';
             const canDm = c.user_id && !isOwner;
-            const avatarHtml = renderAvatarMarkup(c.user_picture, c.user_name, c.avatar_decoration, 'comment-avatar');
+            
+            // Extract equipped items from comment data
+            const frameClass = c.equipped_frame ? `profile-frame profile-frame-${c.equipped_frame.item_id}` : '';
+            const nameColorClass = c.equipped_name_color ? `profile-name-${c.equipped_name_color.item_id}` : '';
+            const titleHtml = c.equipped_title ? `<span class="user-title user-title-${c.equipped_title.rarity}">${c.equipped_title.icon} ${c.equipped_title.name}</span>` : '';
+            const badgesHtml = (c.equipped_badges || []).map(b => `<span class="user-badge-icon" title="${b.name}">${b.icon}</span>`).join('');
+            const chatEffectClass = c.equipped_chat_effect ? `chat-effect-${c.equipped_chat_effect.item_id}` : '';
+            
+            const avatarHtml = renderAvatarMarkup(c.user_picture, c.user_name, c.avatar_decoration, 'comment-avatar ' + frameClass);
             
             return `
-                <div class="comment-item" id="${type}-${c.id}">
+                <div class="comment-item ${chatEffectClass}" id="${type}-${c.id}" data-user-id="${c.user_id || ''}">
                     <button class="delete-comment-btn" onclick="deleteComment(${c.id}, '${type}')" title="Delete (Admin only)">&#10005;</button>
                     <div class="comment-header">
                         ${c.user_id ? `
@@ -6567,17 +6707,19 @@
                         <div class="comment-meta">
                             <div class="comment-name-row">
                                 ${c.user_id ? `
-                                    <a class="comment-user-link comment-name" href="/u/${c.user_id}">${c.user_name}</a>
+                                    <a class="comment-user-link comment-name ${nameColorClass}" href="/u/${c.user_id}" data-user-id="${c.user_id}">${c.user_name}</a>
                                 ` : `
-                                    <div class="comment-name">${c.user_name}</div>
+                                    <div class="comment-name ${nameColorClass}">${c.user_name}</div>
                                 `}
+                                ${badgesHtml}
+                                ${titleHtml}
                                 <span class="comment-role-badge comment-role-${role}">${escapeHtml(roleDisplay)}</span>
                             </div>
                             <div class="comment-time">${formatLocalTimestamp(c.timestamp)}</div>
                         </div>
                     </div>
 
-                    <div class="comment-text">${escapeHtml(c.text)}</div>
+                    <div class="comment-text ${chatEffectClass}" data-user-id="${c.user_id || ''}">${escapeHtml(c.text)}</div>
                     <div class="reaction-bar">
                         <button class="reaction-btn" onclick="addReaction(${c.id}, '${type}', 'heart', this)">❤️ ${reactions['heart'] || 0}</button>
                         <button class="reaction-btn" onclick="addReaction(${c.id}, '${type}', 'pray', this)">🙏 ${reactions['pray'] || 0}</button>
@@ -6593,15 +6735,47 @@
                 </div>
             `;
         }
+        
+        // Function to apply shop effects to all visible comments
+        async function applyShopEffectsToComments() {
+            const comments = document.querySelectorAll('.comment-item[data-user-id]');
+            const userIds = new Set();
+            
+            comments.forEach(comment => {
+                const userId = comment.dataset.userId;
+                if (userId) userIds.add(userId);
+            });
+            
+            // Fetch all customizations in parallel
+            await Promise.all(Array.from(userIds).map(async (userId) => {
+                await fetchUserCustomization(userId);
+            }));
+            
+            // Apply effects
+            comments.forEach(comment => {
+                const userId = comment.dataset.userId;
+                if (userId && userCustomizationCache.has(userId)) {
+                    applyShopEffectsToElement(comment, userCustomizationCache.get(userId));
+                }
+            });
+        }
 
         function renderReplies(replies) {
             if (!Array.isArray(replies) || !replies.length) return '';
             return replies.map(r => {
                 const role = String(r.user_role || 'user').toLowerCase();
                 const roleDisplay = role.replace('_', ' ');
-                const avatarHtml = renderAvatarMarkup(r.user_picture || '', r.user_name || 'User', r.avatar_decoration || '', 'comment-avatar');
+                
+                // Extract equipped items from reply data
+                const frameClass = r.equipped_frame ? `profile-frame profile-frame-${r.equipped_frame.item_id}` : '';
+                const nameColorClass = r.equipped_name_color ? `profile-name-${r.equipped_name_color.item_id}` : '';
+                const titleHtml = r.equipped_title ? `<span class="user-title user-title-${r.equipped_title.rarity}">${r.equipped_title.icon} ${r.equipped_title.name}</span>` : '';
+                const badgesHtml = (r.equipped_badges || []).map(b => `<span class="user-badge-icon" title="${b.name}">${b.icon}</span>`).join('');
+                const chatEffectClass = r.equipped_chat_effect ? `chat-effect-${r.equipped_chat_effect.item_id}` : '';
+                
+                const avatarHtml = renderAvatarMarkup(r.user_picture || '', r.user_name || 'User', r.avatar_decoration || '', 'comment-avatar ' + frameClass);
                 return `
-                    <div class="comment-item" style="margin-left: 26px; margin-top: 8px; border-left: 2px solid rgba(255,255,255,0.12);">
+                    <div class="comment-item reply-item ${chatEffectClass}" style="margin-left: 26px; margin-top: 8px; border-left: 2px solid rgba(255,255,255,0.12);" data-user-id="${r.user_id || ''}">
                         <div class="comment-header">
                             ${r.user_id ? `
                                 <a class="comment-user-link" href="/u/${r.user_id}">
@@ -6611,16 +6785,18 @@
                             <div class="comment-meta">
                                 <div class="comment-name-row">
                                     ${r.user_id ? `
-                                        <a class="comment-user-link comment-name" href="/u/${r.user_id}">${escapeHtml(r.user_name || 'Anonymous')}</a>
+                                        <a class="comment-user-link comment-name ${nameColorClass}" href="/u/${r.user_id}" data-user-id="${r.user_id}">${escapeHtml(r.user_name || 'Anonymous')}</a>
                                     ` : `
-                                        <div class="comment-name">${escapeHtml(r.user_name || 'Anonymous')}</div>
+                                        <div class="comment-name ${nameColorClass}">${escapeHtml(r.user_name || 'Anonymous')}</div>
                                     `}
+                                    ${badgesHtml}
+                                    ${titleHtml}
                                     <span class="comment-role-badge comment-role-${role}">${escapeHtml(roleDisplay)}</span>
                                 </div>
                                 <div class="comment-time">${r.timestamp ? formatLocalTimestamp(r.timestamp) : ''}</div>
                             </div>
                         </div>
-                        <div class="comment-text">${escapeHtml(r.text || '')}</div>
+                        <div class="comment-text ${chatEffectClass}" data-user-id="${r.user_id || ''}">${escapeHtml(r.text || '')}</div>
                     </div>
                 `;
             }).join('');
@@ -6785,6 +6961,9 @@
             loadProfileCustomization();
         }
         
+        // Global variable to store current user's shop customization
+        let currentUserCustomization = null;
+        
         async function loadProfileCustomization() {
             try {
                 const userId = document.getElementById('profile')?.dataset?.userId;
@@ -6794,25 +6973,43 @@
                 if (!res.ok) return;
                 
                 const data = await res.json();
+                currentUserCustomization = data;
                 
                 // Apply frame
                 const frameEl = document.getElementById('profileFrame');
                 if (frameEl && data.frame) {
                     const effects = data.frame.effects || {};
+                    const itemId = data.frame.item_id || '';
                     frameEl.className = 'profile-frame';
-                    if (effects.frame_color === '#FFD700') frameEl.classList.add('gold');
-                    else if (effects.frame_color === '#C0C0C0') frameEl.classList.add('silver');
-                    else if (effects.frame_style === 'wings') frameEl.classList.add('angel');
+                    
+                    // Apply frame based on item_id for more specific styling
+                    if (itemId.includes('gold') || effects.frame_color === '#FFD700') frameEl.classList.add('gold');
+                    else if (itemId.includes('silver') || effects.frame_color === '#C0C0C0') frameEl.classList.add('silver');
+                    else if (itemId.includes('bronze') || effects.frame_color === '#CD7F32') frameEl.classList.add('bronze');
+                    else if (itemId.includes('angel') || effects.frame_style === 'wings') frameEl.classList.add('angel');
+                    else if (itemId.includes('cross') || effects.frame_style === 'cross') frameEl.classList.add('cross');
+                    else if (itemId.includes('heart') || effects.frame_style === 'heart') frameEl.classList.add('heart');
+                    else if (itemId.includes('fire') || effects.frame_style === 'fire') frameEl.classList.add('fire');
+                    else if (itemId.includes('ice') || effects.frame_color === '#00CED1') frameEl.classList.add('ice');
+                    else if (itemId.includes('nature') || effects.frame_style === 'nature') frameEl.classList.add('nature');
+                    else if (itemId.includes('stars') || effects.frame_style === 'stars') frameEl.classList.add('stars');
                 }
                 
                 // Apply name color
                 const nameEl = document.getElementById('profileUserName');
                 if (nameEl && data.name_color) {
                     const effects = data.name_color.effects || {};
-                    nameEl.className = '';
-                    if (effects.gradient) nameEl.classList.add('profile-name', 'rainbow');
-                    else if (effects.color === '#FFD700') nameEl.classList.add('profile-name', 'gold');
-                    else if (effects.color === '#39FF14') nameEl.classList.add('profile-name', 'neon');
+                    const itemId = data.name_color.item_id || '';
+                    nameEl.className = 'user-name';
+                    
+                    if (effects.gradient || itemId.includes('rainbow')) nameEl.classList.add('rainbow');
+                    else if (itemId.includes('gold') || effects.color === '#FFD700') nameEl.classList.add('gold');
+                    else if (itemId.includes('neon') || effects.color === '#39FF14') nameEl.classList.add('neon');
+                    else if (itemId.includes('blue') || effects.color === '#0A84FF') nameEl.classList.add('blue');
+                    else if (itemId.includes('red') || effects.color === '#FF375F') nameEl.classList.add('red');
+                    else if (itemId.includes('purple') || effects.color === '#BF5AF2') nameEl.classList.add('purple');
+                    else if (itemId.includes('green') || effects.color === '#30D158') nameEl.classList.add('green');
+                    else if (itemId.includes('pink') || effects.color === '#FF69B4') nameEl.classList.add('pink');
                     else if (effects.color) nameEl.style.color = effects.color;
                 }
                 
@@ -6820,7 +7017,8 @@
                 const titleEl = document.getElementById('profileTitle');
                 if (titleEl && data.title) {
                     const effects = data.title.effects || {};
-                    titleEl.textContent = effects.title || '';
+                    const rarity = data.title.rarity || 'common';
+                    titleEl.innerHTML = `<span class="user-title ${rarity}">${effects.title || ''}</span>`;
                 } else if (titleEl) {
                     titleEl.textContent = '';
                 }
@@ -6838,14 +7036,121 @@
                 
                 // Apply profile background
                 const profileCard = document.getElementById('profileCard');
-                if (profileCard && data.profile_bg) {
-                    const effects = data.profile_bg.effects || {};
-                    if (effects.bg_style === 'gradient' && effects.colors) {
-                        profileCard.style.background = `linear-gradient(135deg, ${effects.colors.join(', ')})`;
+                if (profileCard) {
+                    profileCard.classList.remove('profile-bg-golden', 'profile-bg-night', 'profile-bg-clouds', 'profile-bg-nature', 'profile-bg-ocean', 'profile-bg-fire');
+                    if (data.profile_bg) {
+                        const effects = data.profile_bg.effects || {};
+                        const itemId = data.profile_bg.item_id || '';
+                        
+                        if (itemId.includes('golden') || (effects.bg_style === 'gradient' && effects.colors && effects.colors[0] === '#FFD700')) {
+                            profileCard.classList.add('profile-bg-golden');
+                        } else if (itemId.includes('night') || effects.bg_style === 'stars') {
+                            profileCard.classList.add('profile-bg-night');
+                        } else if (itemId.includes('clouds') || effects.bg_style === 'clouds') {
+                            profileCard.classList.add('profile-bg-clouds');
+                        } else if (itemId.includes('nature') || effects.bg_style === 'nature') {
+                            profileCard.classList.add('profile-bg-nature');
+                        } else if (itemId.includes('ocean') || effects.bg_style === 'waves') {
+                            profileCard.classList.add('profile-bg-ocean');
+                        } else if (itemId.includes('fire') || effects.bg_style === 'fire') {
+                            profileCard.classList.add('profile-bg-fire');
+                        } else if (effects.bg_style === 'gradient' && effects.colors) {
+                            profileCard.style.background = `linear-gradient(135deg, ${effects.colors.join(', ')})`;
+                        }
                     }
                 }
             } catch (e) {
                 console.error('Error loading profile customization:', e);
+            }
+        }
+        
+        // Function to get another user's customization for displaying their items in comments/chat
+        async function getUserCustomization(userId) {
+            try {
+                const res = await fetch(`/api/shop/profile/${userId}`);
+                if (!res.ok) return null;
+                return await res.json();
+            } catch (e) {
+                return null;
+            }
+        }
+        
+        // Function to apply shop effects to a comment/chat element
+        function applyShopEffectsToElement(element, customization) {
+            if (!customization) return;
+            
+            // Apply name color
+            const nameEl = element.querySelector('.user-name, .comment-name, .message-name');
+            if (nameEl && customization.name_color) {
+                const effects = customization.name_color.effects || {};
+                const itemId = customization.name_color.item_id || '';
+                nameEl.classList.add('user-name');
+                
+                if (effects.gradient || itemId.includes('rainbow')) nameEl.classList.add('rainbow');
+                else if (itemId.includes('gold') || effects.color === '#FFD700') nameEl.classList.add('gold');
+                else if (itemId.includes('neon') || effects.color === '#39FF14') nameEl.classList.add('neon');
+                else if (itemId.includes('blue') || effects.color === '#0A84FF') nameEl.classList.add('blue');
+                else if (itemId.includes('red') || effects.color === '#FF375F') nameEl.classList.add('red');
+                else if (itemId.includes('purple') || effects.color === '#BF5AF2') nameEl.classList.add('purple');
+                else if (itemId.includes('green') || effects.color === '#30D158') nameEl.classList.add('green');
+                else if (itemId.includes('pink') || effects.color === '#FF69B4') nameEl.classList.add('pink');
+            }
+            
+            // Apply title
+            if (customization.title && nameEl) {
+                const effects = customization.title.effects || {};
+                const rarity = customization.title.rarity || 'common';
+                const titleSpan = document.createElement('span');
+                titleSpan.className = `user-title ${rarity}`;
+                titleSpan.textContent = effects.title || '';
+                nameEl.parentNode.insertBefore(titleSpan, nameEl);
+            }
+            
+            // Apply badges
+            if (customization.badges && customization.badges.length > 0 && nameEl) {
+                const badgesSpan = document.createElement('span');
+                badgesSpan.className = 'user-badges';
+                badgesSpan.innerHTML = customization.badges.map(b => {
+                    const effects = b.effects || {};
+                    return `<span class="user-badge-small" style="background: ${effects.color || 'var(--primary)'}" title="${b.name}">${b.icon}</span>`;
+                }).join('');
+                nameEl.parentNode.insertBefore(badgesSpan, nameEl.nextSibling);
+            }
+            
+            // Apply avatar frame
+            const avatarEl = element.querySelector('.comment-avatar, .message-avatar, .user-avatar');
+            if (avatarEl && customization.frame) {
+                const effects = customization.frame.effects || {};
+                const itemId = customization.frame.item_id || '';
+                let frameDiv = avatarEl.querySelector('.comment-avatar-frame');
+                if (!frameDiv) {
+                    frameDiv = document.createElement('div');
+                    frameDiv.className = 'comment-avatar-frame';
+                    avatarEl.appendChild(frameDiv);
+                }
+                
+                if (itemId.includes('gold') || effects.frame_color === '#FFD700') frameDiv.classList.add('gold');
+                else if (itemId.includes('silver') || effects.frame_color === '#C0C0C0') frameDiv.classList.add('silver');
+                else if (itemId.includes('bronze') || effects.frame_color === '#CD7F32') frameDiv.classList.add('bronze');
+                else if (itemId.includes('angel') || effects.frame_style === 'wings') frameDiv.classList.add('angel');
+                else if (itemId.includes('cross') || effects.frame_style === 'cross') frameDiv.classList.add('cross');
+                else if (itemId.includes('heart') || effects.frame_style === 'heart') frameDiv.classList.add('heart');
+                else if (itemId.includes('fire') || effects.frame_style === 'fire') frameDiv.classList.add('fire');
+                else if (itemId.includes('ice') || effects.frame_color === '#00CED1') frameDiv.classList.add('ice');
+                else if (itemId.includes('nature') || effects.frame_style === 'nature') frameDiv.classList.add('nature');
+                else if (itemId.includes('stars') || effects.frame_style === 'stars') frameDiv.classList.add('stars');
+            }
+            
+            // Apply chat effect
+            const messageEl = element.querySelector('.comment-text, .message-text');
+            if (messageEl && customization.chat_effect) {
+                const effects = customization.chat_effect.effects || {};
+                const itemId = customization.chat_effect.item_id || '';
+                
+                if (itemId.includes('sparkle') || effects.effect === 'sparkle') messageEl.classList.add('sparkle');
+                else if (itemId.includes('rainbow') || effects.effect === 'rainbow') messageEl.classList.add('rainbow-text');
+                else if (itemId.includes('glow') || effects.effect === 'glow') messageEl.classList.add('glow');
+                else if (itemId.includes('fire') || effects.effect === 'fire') messageEl.classList.add('fire-text');
             }
         }
 
