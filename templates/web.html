@@ -7347,10 +7347,10 @@
             }
             
             // Apply title - only if not already present
-            // Skip if titles are already rendered server-side
+            // Server-rendered titles use class .user-title-{rarity} (e.g., user-title-legendary)
             if (customization.title && nameEl) {
-                // Check if ANY title already exists (server-rendered or dynamic)
-                const existingAnyTitle = element.querySelector('.user-title');
+                // Check if ANY title already exists (server-rendered uses user-title-* pattern)
+                const existingAnyTitle = element.querySelector('[class*="user-title-"], .user-title');
                 const existingDynamicTitle = element.querySelector('.user-title[data-shop-effect="true"]');
                 if (!existingAnyTitle && !existingDynamicTitle) {
                     const effects = customization.title.effects || {};
@@ -7364,9 +7364,9 @@
             }
             
             // Apply badges - only if not already present
+            // Server-rendered badges use .user-badge-icon class
             if (customization.badges && customization.badges.length > 0 && nameEl) {
-                // Check if ANY badges container already exists
-                const existingAnyBadges = element.querySelector('.user-badges, .user-badge-icon');
+                const existingAnyBadges = element.querySelector('.user-badge-icon');
                 const existingDynamicBadges = element.querySelector('.user-badges[data-shop-effect="true"]');
                 if (!existingAnyBadges && !existingDynamicBadges) {
                     const badgesSpan = document.createElement('span');
