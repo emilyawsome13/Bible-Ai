@@ -26,9 +26,9 @@ ROLE_PERMISSIONS = {
     'host': ['ban', 'timeout', 'restrict_comments', 'view_users', 'view_bans', 'view_audit'],
     'mod': ['ban', 'timeout', 'restrict_comments', 'view_users', 'view_bans', 'view_audit', 'delete_comments'],
     'co_owner': ['ban', 'timeout', 'restrict_comments', 'view_users', 'view_bans', 'view_audit', 'delete_comments', 
-                 'change_roles', 'view_settings'],
+                 'change_roles', 'view_settings', 'manage_xp'],
     'owner': ['ban', 'timeout', 'restrict_comments', 'view_users', 'view_bans', 'view_audit', 'delete_comments',
-              'change_roles', 'view_settings', 'edit_settings', 'full_access']
+              'change_roles', 'view_settings', 'edit_settings', 'manage_xp', 'full_access']
 }
 
 def get_db():
@@ -2990,4 +2990,246 @@ def update_system_settings():
         return jsonify({"success": True})
     except Exception as e:
         print(f"[ERROR] Update system settings: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+# ========== ADMIN XP MANAGEMENT ==========
+
+@admin_bp.route('/api/users/<int:user_id>/give-xp', methods=['POST'])
+@admin_required
+@require_permission('manage_xp')
+def admin_give_xp(user_id):
+    """Admin endpoint to give XP to a user"""
+    admin = get_admin_session()
+    data = request.get_json()
+    amount = data.get('amount', 0)
+    reason = data.get('reason', 'Admin XP gift')
+    send_notification = data.get('notify', True)
+    
+    if amount <= 0:
+        return jsonify({"error": "Amount must be positive"}), 400
+    
+    conn, db_type = get_db()
+    c = conn.cursor()
+    
+    try:
+        # Get user info
+        if db_type == 'postgres':
+            c.execute("SELECT name, email FROM users WHERE id = %s", (user_id,))
+        else:
+            c.execute("SELECT name, email FROM users WHERE id = ?", (user_id,))
+        
+        user = c.fetchone()
+        if not user:
+            conn.close()
+            return jsonify({"error": "User not found"}), 404
+        
+        user_name = user[0] if user else "Unknown"
+        
+        # Get or create user XP record
+        if db_type == 'postgres':
+            c.execute("SELECT xp, total_xp_earned, level FROM user_xp WHERE user_id = %s", (user_id,))
+        else:
+            c.execute("SELECT xp, total_xp_earned, level FROM user_xp WHERE user_id = ?", (user_id,))
+        
+        row = c.fetchone()
+        
+        if row:
+            current_xp = row[0] or 0
+            total_earned = row[1] or 0
+            current_level = row[2] or 1
+        else:
+            current_xp = 0
+            total_earned = 0
+            current_level = 1
+        
+        # Calculate new values
+        new_xp = current_xp + amount
+        new_total = total_earned + amount
+        new_level = (new_total // 1000) + 1
+        leveled_up = new_level > current_level
+        
+        # Update user XP
+        if db_type == 'postgres':
+            c.execute("""
+                INSERT INTO user_xp (user_id, xp, total_xp_earned, level, updated_at)
+                VALUES (%s, %s, %s, %s, CURRENT_TIMESTAMP)
+                ON CONFLICT (user_id) DO UPDATE SET
+                    xp = EXCLUDED.xp,
+                    total_xp_earned = EXCLUDED.total_xp_earned,
+                    level = EXCLUDED.level,
+                    updated_at = CURRENT_TIMESTAMP
+            """, (user_id, new_xp, new_total, new_level))
+            
+            # Log transaction
+            c.execute("""
+                INSERT INTO xp_transactions (user_id, amount, type, description, timestamp)
+                VALUES (%s, %s, 'admin_gift', %s, CURRENT_TIMESTAMP)
+            """, (user_id, amount, f"Admin gift from {admin['role']}: {reason}"))
+        else:
+            c.execute("""
+                INSERT OR REPLACE INTO user_xp (user_id, xp, total_xp_earned, level, updated_at)
+                VALUES (?, ?, ?, ?, datetime('now'))
+            """, (user_id, new_xp, new_total, new_level))
+            
+            c.execute("""
+                INSERT INTO xp_transactions (user_id, amount, type, description, timestamp)
+                VALUES (?, ?, 'admin_gift', ?, datetime('now'))
+            """, (user_id, amount, f"Admin gift from {admin['role']}: {reason}"))
+        
+        conn.commit()
+        
+        # Log admin action
+        log_action(
+            "GIVE_XP",
+            f"Gave {amount} XP to {user_name} ({user_id})",
+            target_user_id=user_id,
+            status="success",
+            extras={"amount": amount, "reason": reason, "module": "xp_management"},
+            target={"user_id": user_id, "name": user_name}
+        )
+        
+        conn.close()
+        
+        return jsonify({
+            "success": True,
+            "user_id": user_id,
+            "user_name": user_name,
+            "amount": amount,
+            "new_total": new_xp,
+            "new_level": new_level,
+            "leveled_up": leveled_up,
+            "message": f"Successfully gave {amount} XP to {user_name}"
+        })
+    except Exception as e:
+        print(f"[ERROR] Admin give XP: {e}")
+        import traceback
+        traceback.print_exc()
+        conn.close()
+        return jsonify({"error": str(e)}), 500
+
+
+@admin_bp.route('/api/users/<int:user_id>/xp-history')
+@admin_required
+def get_user_xp_history(user_id):
+    """Get XP transaction history for a user"""
+    try:
+        conn, db_type = get_db()
+        c = conn.cursor()
+        
+        if db_type == 'postgres':
+            c.execute("""
+                SELECT amount, type, description, timestamp
+                FROM xp_transactions
+                WHERE user_id = %s
+                ORDER BY timestamp DESC
+                LIMIT 50
+            """, (user_id,))
+        else:
+            c.execute("""
+                SELECT amount, type, description, timestamp
+                FROM xp_transactions
+                WHERE user_id = ?
+                ORDER BY timestamp DESC
+                LIMIT 50
+            """, (user_id,))
+        
+        transactions = []
+        for row in c.fetchall():
+            transactions.append({
+                "amount": row[0],
+                "type": row[1],
+                "description": row[2],
+                "timestamp": row[3]
+            })
+        
+        # Get current XP
+        if db_type == 'postgres':
+            c.execute("SELECT xp, level FROM user_xp WHERE user_id = %s", (user_id,))
+        else:
+            c.execute("SELECT xp, level FROM user_xp WHERE user_id = ?", (user_id,))
+        
+        xp_row = c.fetchone()
+        current_xp = xp_row[0] if xp_row else 0
+        level = xp_row[1] if xp_row else 1
+        
+        conn.close()
+        
+        return jsonify({
+            "user_id": user_id,
+            "current_xp": current_xp,
+            "level": level,
+            "transactions": transactions
+        })
+    except Exception as e:
+        print(f"[ERROR] Get XP history: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@admin_bp.route('/api/users/<int:user_id>/stats')
+@admin_required
+def get_user_stats(user_id):
+    """Get comprehensive stats for a user including XP"""
+    try:
+        conn, db_type = get_db()
+        c = conn.cursor()
+        
+        # Get user info
+        if db_type == 'postgres':
+            c.execute("SELECT name, email, role FROM users WHERE id = %s", (user_id,))
+        else:
+            c.execute("SELECT name, email, role FROM users WHERE id = ?", (user_id,))
+        
+        user = c.fetchone()
+        if not user:
+            conn.close()
+            return jsonify({"error": "User not found"}), 404
+        
+        user_name, user_email, user_role = user
+        
+        # Get stats
+        if db_type == 'postgres':
+            c.execute("SELECT COUNT(*) FROM likes WHERE user_id = %s", (user_id,))
+            likes = c.fetchone()[0]
+            
+            c.execute("SELECT COUNT(*) FROM saves WHERE user_id = %s", (user_id,))
+            saves = c.fetchone()[0]
+            
+            c.execute("SELECT COUNT(*) FROM comments WHERE user_id = %s AND is_deleted = 0", (user_id,))
+            comments = c.fetchone()[0]
+            
+            c.execute("SELECT xp, level FROM user_xp WHERE user_id = %s", (user_id,))
+        else:
+            c.execute("SELECT COUNT(*) FROM likes WHERE user_id = ?", (user_id,))
+            likes = c.fetchone()[0]
+            
+            c.execute("SELECT COUNT(*) FROM saves WHERE user_id = ?", (user_id,))
+            saves = c.fetchone()[0]
+            
+            c.execute("SELECT COUNT(*) FROM comments WHERE user_id = ? AND is_deleted = 0", (user_id,))
+            comments = c.fetchone()[0]
+            
+            c.execute("SELECT xp, level FROM user_xp WHERE user_id = ?", (user_id,))
+        
+        xp_row = c.fetchone()
+        xp = xp_row[0] if xp_row else 0
+        level = xp_row[1] if xp_row else 1
+        
+        conn.close()
+        
+        return jsonify({
+            "user_id": user_id,
+            "name": user_name,
+            "email": user_email,
+            "role": user_role,
+            "likes": likes,
+            "saves": saves,
+            "comments": comments,
+            "xp": xp,
+            "level": level
+        })
+    except Exception as e:
+        print(f"[ERROR] Get user stats: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500

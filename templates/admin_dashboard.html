@@ -1306,11 +1306,16 @@
                     <div class="user-stat-value" id="detailComments">0</div>
                     <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">Comments</div>
                 </div>
+                <div class="user-stat" style="background: linear-gradient(135deg, rgba(255,215,0,0.15), rgba(255,215,0,0.05)); border-color: rgba(255,215,0,0.3);">
+                    <div class="user-stat-value" id="detailXP" style="color: #FFD700;">0</div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">⚡ XP (Level <span id="detailLevel">1</span>)</div>
+                </div>
             </div>
             <div style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
                 <button class="btn btn-warning" id="detailRestrictBtn" onclick="restrictDetailUser()">&#128683; Restrict</button>
                 <button class="btn btn-danger" id="detailBanBtn" onclick="banDetailUser()">&#128296; Ban</button>
                 <button class="btn btn-primary" onclick="changeDetailRole()">&#128081; Change Role</button>
+                <button class="btn btn-success perm-manage-xp hidden" onclick="giveXPToDetailUser()">&#9889; Give XP</button>
             </div>
         </div>
     </div>
@@ -1332,6 +1337,20 @@
             <div style="display:flex;gap:10px;justify-content:flex-end;">
                 <button class="btn" onclick="closeRestrictModal()" style="background:#333;color:#fff;">Cancel</button>
                 <button class="btn btn-warning" onclick="confirmRestrict()">Restrict User</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Give XP Modal -->
+    <div class="modal-overlay" id="giveXPModal">
+        <div class="modal">
+            <h3>&#9889; Give XP to User</h3>
+            <p style="color:#888;margin:10px 0;font-size:0.9rem;">Current XP: <span id="giveXPCurrent" style="color:#FFD700;font-weight:bold;">0</span> | Level: <span id="giveXPLevel">1</span></p>
+            <input type="number" class="modal-input" id="giveXPAmount" placeholder="Amount of XP to give..." min="1" max="100000">
+            <input type="text" class="modal-input" id="giveXPReason" placeholder="Reason (optional)..." value="Admin gift">
+            <div style="display:flex;gap:10px;justify-content:flex-end;">
+                <button class="btn" onclick="closeGiveXPModal()" style="background:#333;color:#fff;">Cancel</button>
+                <button class="btn btn-success" onclick="confirmGiveXP()">Give XP</button>
             </div>
         </div>
     </div>
@@ -1822,6 +1841,7 @@
                     actions += `<button class="btn btn-primary" onclick="changeRole(${u.id}, '${u.role}')">Role</button>`;
                 }
                 actions += `<button class="btn btn-secondary" onclick="openDmFromAdmin(${u.id})">DM</button>`;
+                actions += `<button class="btn btn-info" onclick="viewUserDetails(${u.id})">Details</button>`;
                 
                 html += `<tr>
                     <td>${escapeHtml(u.name)}<br><small style="color:#888">${escapeHtml(u.email)}</small></td>
@@ -1838,6 +1858,138 @@
             if (!userId) return;
             const url = `/?dmUser=${userId}#comments`;
             window.open(url, '_blank');
+        }
+
+        // ========== USER DETAILS & XP MANAGEMENT ==========
+        let currentDetailUserId = null;
+
+        async function viewUserDetails(userId) {
+            currentDetailUserId = userId;
+            try {
+                // Load user stats
+                const res = await fetch(`/admin/api/users/${userId}/stats`);
+                const data = await res.json();
+                
+                if (data.error) {
+                    showToast('Error loading user details: ' + data.error, 'error');
+                    return;
+                }
+                
+                // Update modal
+                document.getElementById('detailAvatar').textContent = (data.name || 'U').charAt(0).toUpperCase();
+                document.getElementById('detailName').textContent = data.name || 'Unknown';
+                document.getElementById('detailEmail').textContent = data.email || 'No email';
+                document.getElementById('detailRole').textContent = normalizeRole(data.role);
+                document.getElementById('detailRole').className = 'user-badge badge-' + normalizeRole(data.role);
+                
+                document.getElementById('detailLikes').textContent = data.likes || 0;
+                document.getElementById('detailSaves').textContent = data.saves || 0;
+                document.getElementById('detailComments').textContent = data.comments || 0;
+                document.getElementById('detailXP').textContent = data.xp || 0;
+                document.getElementById('detailLevel').textContent = data.level || 1;
+                
+                // Show/hide XP button based on permissions
+                if (permissions.includes('manage_xp')) {
+                    document.querySelectorAll('.perm-manage-xp').forEach(el => el.classList.remove('hidden'));
+                }
+                
+                // Show modal
+                document.getElementById('userDetailModal').style.display = 'flex';
+            } catch (err) {
+                console.error('Error viewing user details:', err);
+                showToast('Error loading user details', 'error');
+            }
+        }
+
+        function closeUserDetailModal() {
+            document.getElementById('userDetailModal').style.display = 'none';
+            currentDetailUserId = null;
+        }
+
+        function restrictDetailUser() {
+            if (currentDetailUserId) {
+                openRestrictModal(currentDetailUserId);
+            }
+        }
+
+        function banDetailUser() {
+            if (currentDetailUserId) {
+                openBanModal(currentDetailUserId);
+            }
+        }
+
+        function changeDetailRole() {
+            if (currentDetailUserId) {
+                const user = allUsers.find(u => u.id === currentDetailUserId);
+                if (user) {
+                    changeRole(currentDetailUserId, user.role);
+                }
+            }
+        }
+
+        function giveXPToDetailUser() {
+            if (!currentDetailUserId) return;
+            
+            // Get current XP from display
+            const currentXP = document.getElementById('detailXP').textContent;
+            const currentLevel = document.getElementById('detailLevel').textContent;
+            
+            document.getElementById('giveXPCurrent').textContent = currentXP;
+            document.getElementById('giveXPLevel').textContent = currentLevel;
+            document.getElementById('giveXPAmount').value = '';
+            document.getElementById('giveXPReason').value = 'Admin gift';
+            
+            document.getElementById('giveXPModal').style.display = 'flex';
+        }
+
+        function closeGiveXPModal() {
+            document.getElementById('giveXPModal').style.display = 'none';
+        }
+
+        async function confirmGiveXP() {
+            if (!currentDetailUserId) return;
+            
+            const amount = parseInt(document.getElementById('giveXPAmount').value);
+            const reason = document.getElementById('giveXPReason').value || 'Admin gift';
+            
+            if (!amount || amount <= 0) {
+                showToast('Please enter a valid XP amount', 'error');
+                return;
+            }
+            
+            if (amount > 100000) {
+                showToast('Maximum XP per gift is 100,000', 'error');
+                return;
+            }
+            
+            try {
+                const res = await fetch(`/admin/api/users/${currentDetailUserId}/give-xp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount, reason, notify: true })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    showToast(`Successfully gave ${amount} XP to ${data.user_name}!`, 'success');
+                    
+                    // Update display
+                    document.getElementById('detailXP').textContent = data.new_total;
+                    document.getElementById('detailLevel').textContent = data.new_level;
+                    
+                    if (data.leveled_up) {
+                        showToast(`🎉 ${data.user_name} leveled up to level ${data.new_level}!`, 'success');
+                    }
+                    
+                    closeGiveXPModal();
+                } else {
+                    showToast(data.error || 'Failed to give XP', 'error');
+                }
+            } catch (err) {
+                console.error('Error giving XP:', err);
+                showToast('Error giving XP', 'error');
+            }
         }
 
         function searchUsers(query) {

@@ -7398,7 +7398,7 @@ function loadAchievements(stats) {
             if (levelEl) levelEl.textContent = `Level ${level}`;
         }
 
-        function awardXp(amount, type, key) {
+        async function awardXp(amount, type, key) {
             const state = getXpState();
             if (type === 'challenge') {
                 if (state.claimedChallenges[key]) return false;
@@ -7409,6 +7409,18 @@ function loadAchievements(stats) {
             }
             state.xp += Math.max(0, Number(amount || 0));
             saveXpState(state);
+            
+            // Sync to server
+            try {
+                await fetch('/api/xp/award', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount: amount, action: type || 'achievement' })
+                });
+            } catch (e) {
+                console.error('Error syncing XP to server:', e);
+            }
+            
             updateXpDisplay();
             return true;
         }
