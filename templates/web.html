@@ -38,11 +38,6 @@
             --safe-bottom: env(safe-area-inset-bottom, 0px);
             --font-size: 1.05rem;
             --animation-speed: 1;
-            --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
-            --ease-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
-            --motion-fast: 160ms;
-            --motion-base: 280ms;
-            --motion-slow: 420ms;
         }
 
         [data-theme="dark"] {
@@ -950,8 +945,8 @@
         .ambient-bg { transition: filter 280ms ease; }
 
         @keyframes tabEnter {
-            0% { opacity: 0; transform: translateY(10px) scale(0.995); }
-            100% { opacity: 1; transform: translateY(0) scale(1); }
+            0% { opacity: 0; transform: translateY(10px) scale(0.995); filter: blur(3px); }
+            100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
         }
 
         .about-hero {
@@ -3950,70 +3945,6 @@
         /* Mythic Chat Effects */
         .chat-effect-chat_universe { background: linear-gradient(90deg, #9400D3, #00CED1, #FF1493) !important; -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; background-clip: text !important; animation: rainbow 3s linear infinite; font-weight: 700 !important; }
         .chat-effect-chat_godly { color: #FFD700 !important; text-shadow: 0 0 20px #FFD700, 0 0 40px #FF1493 !important; animation: mythicPulse 1s infinite; font-weight: 700 !important; }
-
-        /* Motion polish */
-        html {
-            scroll-behavior: smooth;
-        }
-
-        .ambient-bg {
-            will-change: filter;
-            transition: filter var(--motion-base) var(--ease-soft);
-        }
-
-        .ambient-orb {
-            animation-duration: calc(24s * var(--animation-speed));
-            animation-timing-function: var(--ease-soft);
-            will-change: transform, opacity;
-        }
-
-        body:not(.no-animations) :is(
-            .card,
-            .glass-card,
-            .verse-card,
-            .btn,
-            .action-btn,
-            .tab-btn,
-            .nav-item,
-            .shop-item,
-            .achievement-item
-        ) {
-            transition-property: transform, box-shadow, background-color, border-color, color, opacity, filter;
-            transition-duration: calc(var(--motion-base) * var(--animation-speed));
-            transition-timing-function: var(--ease-smooth);
-            backface-visibility: hidden;
-        }
-
-        body:not(.no-animations) .tab-view.active {
-            animation-duration: calc(var(--motion-slow) * var(--animation-speed));
-            animation-timing-function: var(--ease-smooth);
-        }
-
-        .card,
-        .glass-card,
-        .verse-card {
-            backdrop-filter: blur(12px) saturate(1.06);
-        }
-
-        body:not(.no-animations) .card:hover,
-        body:not(.no-animations) .glass-card:hover,
-        body:not(.no-animations) .verse-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 14px 34px var(--ink);
-        }
-
-        .btn:focus-visible,
-        .action-btn:focus-visible,
-        .tab-btn:focus-visible,
-        .nav-item:focus-visible {
-            outline: 2px solid var(--primary);
-            outline-offset: 2px;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            html { scroll-behavior: auto; }
-            .ambient-orb { animation-duration: 48s; }
-        }
     </style>
 </head>
 <body>
@@ -5128,17 +5059,6 @@
         let currentVerse = null;
         let currentTab = 'discover';
         let libraryData = { liked: [], saved: [], collections: [] };
-        let userStats = {
-            total_verses: 0,
-            likes: 0,
-            saves: 0,
-            comments: 0,
-            replies: 0,
-            shares: 0,
-            purchases: 0,
-            liked_comments: 0
-        };
-        let userAchievements = JSON.parse(localStorage.getItem('unlockedAchievements') || '[]');
         let settings = {
             darkMode: false,
             fontSize: 'medium',
@@ -5474,11 +5394,20 @@
                 const data = await res.json();
                 const userInfoRole = data.role || 'user';
                 let effectiveRole = userInfoRole;
-                const sessionRole = localStorage.getItem('bibleAppRole');
-                if (sessionRole) effectiveRole = pickHigherRole(effectiveRole, sessionRole);
+                let adminSessionRole = null;
+                try {
+                    const adminRes = await fetch('/admin/api/check-session');
+                    if (adminRes.ok) {
+                        const adminData = await adminRes.json();
+                        if (adminData && adminData.role) adminSessionRole = adminData.role;
+                    }
+                } catch (_) {}
+                if (adminSessionRole) {
+                    effectiveRole = pickHigherRole(effectiveRole, adminSessionRole);
+                }
                 userRole = effectiveRole;
                 
-                if (data.is_admin || data.session_admin || rolePriority(effectiveRole) > rolePriority('user')) {
+                if (data.is_admin || data.session_admin || adminSessionRole) {
                     isAdmin = true;
                     localStorage.setItem('bibleAppIsAdmin', 'true');
                     localStorage.setItem('bibleAppRole', effectiveRole);
@@ -5650,13 +5579,6 @@
         }
 
         // Tab Switching
-        function smoothScrollContentTop() {
-            const content = document.querySelector('.content');
-            if (!content) return;
-            const smoothOn = settings.animations && !document.body.classList.contains('no-animations');
-            content.scrollTo({ top: 0, behavior: smoothOn ? 'smooth' : 'auto' });
-        }
-
         function switchTab(tab, btn = null) {
             AudioSys.playSwitch();
             const prevTab = currentTab;
@@ -5715,8 +5637,6 @@
                 setAboutSlide(aboutSlideIndex);
                 startAboutProgressTicker();
             }
-
-            smoothScrollContentTop();
         }
 
         async function pingPresence() {
@@ -5841,11 +5761,6 @@
             if (text) text.textContent = formatCountdown(remaining);
         }
 
-        function isExpectedFetchAbort(err) {
-            const msg = String((err && err.message) || err || '').toLowerCase();
-            return msg.includes('aborted') || msg.includes('aborterror') || msg.includes('failed to fetch');
-        }
-
         async function fetchVerse() {
             if (verseFetchInFlight) return;
             verseFetchInFlight = true;
@@ -5919,9 +5834,7 @@
                     }
                 }
             } catch (e) {
-                if (!isExpectedFetchAbort(e)) {
-                    // Keep runtime resilient: transient network hiccups should not surface noisy errors to users.
-                }
+                console.error('Fetch error:', e);
             } finally {
                 verseFetchInFlight = false;
             }
@@ -10491,3 +10404,8 @@ async function checkAchievement(type, value) {
     </script>
 </body>
 </html>
+
+
+
+
+
